@@ -1,41 +1,43 @@
 export interface ArtworkSimpleResponse {
     artworkId: number;
+    exhibitionId: number;
     title: string;
-    artist: string | null;
-    productionYear: number | null;
+    artistName: string | null;
+    productionYear: string | null;
+    medium: string | null;
     imageUrl: string | null;
+    memo: string | null;
     createdAt: string;
+    updatedAt: string;
 }
 
 export interface ArtworkResponse {
     artworkId: number;
+    exhibitionId: number;
     title: string;
-    artist: string | null;
-    productionYear: number | null;
+    artistName: string | null;
+    productionYear: string | null;
     medium: string | null;
-    size: string | null;
     imageUrl: string | null;
-    description: string | null;
+    memo: string | null;
     createdAt: string;
     updatedAt: string;
 }
 
 export interface ArtworkCreateRequest {
     title: string;
-    artist: string;
-    productionYear: number | null;
+    artistName: string;
+    productionYear: string;
     medium: string;
-    size: string;
     imageUrl: string | null;
-    description: string;
+    memo: string;
 }
 
 export interface ArtworkUpdateRequest {
     title: string;
-    artist: string;
-    productionYear: number | null;
+    artistName: string;
+    productionYear: string;
     medium: string;
-    size: string;
     imageUrl: string | null;
-    description: string;
+    memo: string;
 }
