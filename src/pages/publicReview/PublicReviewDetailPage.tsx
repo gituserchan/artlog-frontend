@@ -1,0 +1,396 @@
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import axios from "axios";
+import {
+    bookmarkReview,
+    getPublicReview,
+    likeReview,
+    unbookmarkReview,
+    unlikeReview,
+} from "../../api/publicReviewApi";
+import type { PublicReviewResponse } from "../../types/publicReview";
+
+function PublicReviewDetailPage() {
+    const params = useParams();
+
+    const reviewId = Number(params.reviewId);
+
+    const [review, setReview] = useState<PublicReviewResponse | null>(null);
+    const [liked, setLiked] = useState(false);
+    const [bookmarked, setBookmarked] = useState(false);
+    const [likeCount, setLikeCount] = useState(0);
+    const [bookmarkCount, setBookmarkCount] = useState(0);
+    const [loading, setLoading] = useState(false);
+    const [likeLoading, setLikeLoading] = useState(false);
+    const [bookmarkLoading, setBookmarkLoading] = useState(false);
+    const [message, setMessage] = useState("");
+
+    const getImageSrc = (imageUrl: string) => {
+        if (imageUrl.startsWith("http")) {
+            return imageUrl;
+        }
+
+        return `${import.meta.env.VITE_API_BASE_URL}${imageUrl}`;
+    };
+
+    const formatCreatedAt = (createdAt: string) => {
+        return createdAt.replace("T", " ").slice(0, 16);
+    };
+
+    const formatReviewType = (targetReview: PublicReviewResponse) => {
+        return targetReview.reviewType === "EXHIBITION" ? "전시 감상" : "작품 감상";
+    };
+
+    const getRecordLink = (targetReview: PublicReviewResponse) => {
+        if (targetReview.reviewType === "ARTWORK" && targetReview.artworkId) {
+            return `/exhibitions/${targetReview.exhibitionId}/artworks/${targetReview.artworkId}`;
+        }
+
+        return `/exhibitions/${targetReview.exhibitionId}`;
+    };
+
+    const getRecordLinkText = (targetReview: PublicReviewResponse) => {
+        return targetReview.reviewType === "ARTWORK"
+            ? "작품 기록 보기"
+            : "전시 기록 보기";
+    };
+
+    const isAlreadyLikedError = (error: unknown) => {
+        if (!axios.isAxiosError(error)) {
+            return false;
+        }
+
+        const errorMessage = error.response?.data?.message || "";
+
+        return (
+            errorMessage.includes("이미") &&
+            (errorMessage.includes("좋아요") || errorMessage.includes("like"))
+        );
+    };
+
+    const isAlreadyBookmarkedError = (error: unknown) => {
+        if (!axios.isAxiosError(error)) {
+            return false;
+        }
+
+        const errorMessage = error.response?.data?.message || "";
+
+        return (
+            errorMessage.includes("이미") &&
+            (errorMessage.includes("북마크") || errorMessage.includes("bookmark"))
+        );
+    };
+
+    const getErrorMessage = (error: unknown, fallbackMessage: string) => {
+        if (axios.isAxiosError(error)) {
+            return error.response?.data?.message || fallbackMessage;
+        }
+
+        return fallbackMessage;
+    };
+
+    const fetchPublicReview = async () => {
+        if (!reviewId || Number.isNaN(reviewId)) {
+            setMessage("올바르지 않은 공개 감상입니다.");
+            return;
+        }
+
+        setLoading(true);
+        setMessage("");
+
+        try {
+            const response = await getPublicReview(reviewId);
+
+            setReview(response.data);
+            setLikeCount(response.data.likeCount);
+            setBookmarkCount(response.data.bookmarkCount);
+
+            /**
+             * 현재 백엔드 공개 감상 응답에는
+             * 내가 좋아요/북마크를 눌렀는지 여부가 없습니다.
+             *
+             * 그래서 최초 진입 시에는 false로 두고,
+             * 실제 버튼 클릭 시 서버 응답을 기준으로 상태를 보정합니다.
+             */
+            setLiked(false);
+            setBookmarked(false);
+        } catch (error) {
+            console.error(error);
+            setMessage(getErrorMessage(error, "공개 감상을 불러오지 못했습니다."));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchPublicReview();
+    }, [reviewId]);
+
+    const handleLikeClick = async () => {
+        if (!review || likeLoading) {
+            return;
+        }
+
+        setLikeLoading(true);
+        setMessage("");
+
+        try {
+            if (liked) {
+                await unlikeReview(review.reviewId);
+
+                setLiked(false);
+                setLikeCount((prevCount) => Math.max(prevCount - 1, 0));
+                return;
+            }
+
+            await likeReview(review.reviewId);
+
+            setLiked(true);
+            setLikeCount((prevCount) => prevCount + 1);
+        } catch (error) {
+            console.error(error);
+
+            /**
+             * 백엔드는 이미 좋아요를 누른 감상에 다시 POST를 보내면 에러를 반환합니다.
+             * 하지만 프론트는 최초 진입 시 좋아요 여부를 알 수 없으므로,
+             * 이 에러가 오면 실제 상태가 "이미 좋아요한 상태"였다고 보고
+             * 사용자의 클릭을 "좋아요 취소" 의도로 처리합니다.
+             */
+            if (isAlreadyLikedError(error)) {
+                try {
+                    await unlikeReview(review.reviewId);
+
+                    setLiked(false);
+                    setLikeCount((prevCount) => Math.max(prevCount - 1, 0));
+                    setMessage("");
+                    return;
+                } catch (unlikeError) {
+                    console.error(unlikeError);
+                    setMessage(getErrorMessage(unlikeError, "좋아요 취소에 실패했습니다."));
+                    return;
+                }
+            }
+
+            setMessage(
+                getErrorMessage(
+                    error,
+                    "좋아요 처리에 실패했습니다. 로그인이 필요할 수 있습니다."
+                )
+            );
+        } finally {
+            setLikeLoading(false);
+        }
+    };
+
+    const handleBookmarkClick = async () => {
+        if (!review || bookmarkLoading) {
+            return;
+        }
+
+        setBookmarkLoading(true);
+        setMessage("");
+
+        try {
+            if (bookmarked) {
+                await unbookmarkReview(review.reviewId);
+
+                setBookmarked(false);
+                setBookmarkCount((prevCount) => Math.max(prevCount - 1, 0));
+                return;
+            }
+
+            await bookmarkReview(review.reviewId);
+
+            setBookmarked(true);
+            setBookmarkCount((prevCount) => prevCount + 1);
+        } catch (error) {
+            console.error(error);
+
+            /**
+             * 좋아요와 동일하게,
+             * 이미 북마크한 감상에 다시 POST를 보냈다는 서버 에러가 오면
+             * 사용자의 클릭을 "북마크 취소" 의도로 처리합니다.
+             */
+            if (isAlreadyBookmarkedError(error)) {
+                try {
+                    await unbookmarkReview(review.reviewId);
+
+                    setBookmarked(false);
+                    setBookmarkCount((prevCount) => Math.max(prevCount - 1, 0));
+                    setMessage("");
+                    return;
+                } catch (unbookmarkError) {
+                    console.error(unbookmarkError);
+                    setMessage(
+                        getErrorMessage(unbookmarkError, "북마크 취소에 실패했습니다.")
+                    );
+                    return;
+                }
+            }
+
+            setMessage(
+                getErrorMessage(
+                    error,
+                    "북마크 처리에 실패했습니다. 로그인이 필요할 수 있습니다."
+                )
+            );
+        } finally {
+            setBookmarkLoading(false);
+        }
+    };
+
+    if (loading) {
+        return <p className="info-text">공개 감상을 불러오는 중입니다.</p>;
+    }
+
+    if (message && !review) {
+        return <p className="error-text">{message}</p>;
+    }
+
+    if (!review) {
+        return <p className="info-text">공개 감상이 없습니다.</p>;
+    }
+
+    return (
+        <section>
+            <div className="detail-header">
+                <div>
+                    <p className="eyebrow">{formatReviewType(review)}</p>
+                    <h1>{review.title}</h1>
+                    <p className="page-description">
+                        {review.nickname}님의 공개 감상입니다.
+                    </p>
+                </div>
+
+                <div className="detail-actions">
+                    <button
+                        type="button"
+                        className={liked ? "primary-link" : "subtle-button"}
+                        disabled={likeLoading}
+                        onClick={handleLikeClick}
+                    >
+                        {liked ? "좋아요 취소" : "좋아요"} {likeCount}
+                    </button>
+
+                    <button
+                        type="button"
+                        className={bookmarked ? "primary-link" : "subtle-button"}
+                        disabled={bookmarkLoading}
+                        onClick={handleBookmarkClick}
+                    >
+                        {bookmarked ? "북마크 취소" : "북마크"} {bookmarkCount}
+                    </button>
+                </div>
+            </div>
+
+            {message && <p className="error-text">{message}</p>}
+
+            <div className="detail-layout">
+                <div className="detail-poster">
+                    {review.imageUrl ? (
+                        <img src={getImageSrc(review.imageUrl)} alt={review.title} />
+                    ) : (
+                        <span>No image</span>
+                    )}
+                </div>
+
+                <div className="detail-card">
+                    <dl className="detail-list">
+                        <div>
+                            <dt>작성자</dt>
+                            <dd>{review.nickname}</dd>
+                        </div>
+
+                        <div>
+                            <dt>구분</dt>
+                            <dd>
+                                {review.reviewType === "EXHIBITION" ? "전시 감상" : "작품 감상"}
+                            </dd>
+                        </div>
+
+                        <div>
+                            <dt>전시명</dt>
+                            <dd>{review.exhibitionTitle}</dd>
+                        </div>
+
+                        <div>
+                            <dt>미술관 / 전시장</dt>
+                            <dd>{review.museumName}</dd>
+                        </div>
+
+                        {review.reviewType === "ARTWORK" && (
+                            <>
+                                <div>
+                                    <dt>작품명</dt>
+                                    <dd>{review.artworkTitle || "-"}</dd>
+                                </div>
+
+                                <div>
+                                    <dt>작가</dt>
+                                    <dd>{review.artistName || "작가 미상"}</dd>
+                                </div>
+                            </>
+                        )}
+
+                        <div>
+                            <dt>평점</dt>
+                            <dd>{review.rating}점</dd>
+                        </div>
+
+                        <div>
+                            <dt>감정 태그</dt>
+                            <dd>{review.emotionTag || "-"}</dd>
+                        </div>
+
+                        <div>
+                            <dt>키워드</dt>
+                            <dd>{review.keywords || "-"}</dd>
+                        </div>
+
+                        <div>
+                            <dt>재방문 의향</dt>
+                            <dd>{review.wantToRevisit ? "있음" : "없음"}</dd>
+                        </div>
+
+                        <div>
+                            <dt>좋아요</dt>
+                            <dd>{likeCount}</dd>
+                        </div>
+
+                        <div>
+                            <dt>북마크</dt>
+                            <dd>{bookmarkCount}</dd>
+                        </div>
+
+                        <div>
+                            <dt>작성일</dt>
+                            <dd>{formatCreatedAt(review.createdAt)}</dd>
+                        </div>
+
+                        <div>
+                            <dt>수정일</dt>
+                            <dd>{formatCreatedAt(review.updatedAt)}</dd>
+                        </div>
+                    </dl>
+
+                    <div className="memo-box">
+                        <h2>감상 내용</h2>
+                        <p>{review.content}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="bottom-actions">
+                <Link to="/public-reviews" className="secondary-link">
+                    공개 감상 목록으로
+                </Link>
+
+                <Link to={getRecordLink(review)} className="primary-link">
+                    {getRecordLinkText(review)}
+                </Link>
+            </div>
+        </section>
+    );
+}
+
+export default PublicReviewDetailPage;
