@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { createExhibition } from "../../api/exhibitionApi";
+import { uploadImage } from "../../api/fileApi";
 
 function ExhibitionCreatePage() {
     const navigate = useNavigate();
@@ -13,15 +14,23 @@ function ExhibitionCreatePage() {
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [visitDate, setVisitDate] = useState("");
-    const [posterImageUrl, setPosterImageUrl] = useState("");
+    const [posterImageFile, setPosterImageFile] = useState<File | null>(null);
     const [memo, setMemo] = useState("");
     const [message, setMessage] = useState("");
+    const [uploading, setUploading] = useState(false);
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setMessage("");
+        setUploading(true);
 
         try {
+            let posterImageUrl: string | null = null;
+
+            if (posterImageFile) {
+                posterImageUrl = await uploadImage(posterImageFile);
+            }
+
             const response = await createExhibition({
                 title,
                 museumName,
@@ -29,7 +38,7 @@ function ExhibitionCreatePage() {
                 startDate,
                 endDate,
                 visitDate,
-                posterImageUrl: posterImageUrl.trim() ? posterImageUrl.trim() : null,
+                posterImageUrl,
                 memo,
             });
 
@@ -47,6 +56,8 @@ function ExhibitionCreatePage() {
             }
 
             setMessage("전시 기록 등록에 실패했습니다.");
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -126,12 +137,17 @@ function ExhibitionCreatePage() {
                 </div>
 
                 <div>
-                    <label>포스터 이미지 URL</label>
+                    <label>포스터 이미지</label>
                     <input
-                        value={posterImageUrl}
-                        placeholder="/uploads/images/example.png"
-                        onChange={(event) => setPosterImageUrl(event.target.value)}
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) =>
+                            setPosterImageFile(event.target.files?.[0] ?? null)
+                        }
                     />
+                    {posterImageFile && (
+                        <p className="info-text">선택한 파일: {posterImageFile.name}</p>
+                    )}
                 </div>
 
                 <div>
@@ -146,7 +162,9 @@ function ExhibitionCreatePage() {
                 {message && <p className="error-text">{message}</p>}
 
                 <div className="form-actions">
-                    <button type="submit">등록하기</button>
+                    <button type="submit" disabled={uploading}>
+                        {uploading ? "등록 중..." : "등록하기"}
+                    </button>
                     <button
                         type="button"
                         className="subtle-button"

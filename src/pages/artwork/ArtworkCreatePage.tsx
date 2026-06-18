@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { createArtwork } from "../../api/artworkApi";
+import { uploadImage } from "../../api/fileApi";
 
 function ArtworkCreatePage() {
     const navigate = useNavigate();
@@ -14,9 +15,10 @@ function ArtworkCreatePage() {
     const [artistName, setArtistName] = useState("");
     const [productionYear, setProductionYear] = useState("");
     const [medium, setMedium] = useState("");
-    const [imageUrl, setImageUrl] = useState("");
+    const [imageFile, setImageFile] = useState<File | null>(null);
     const [memo, setMemo] = useState("");
     const [message, setMessage] = useState("");
+    const [uploading, setUploading] = useState(false);
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -27,14 +29,21 @@ function ArtworkCreatePage() {
         }
 
         setMessage("");
+        setUploading(true);
 
         try {
+            let imageUrl: string | null = null;
+
+            if (imageFile) {
+                imageUrl = await uploadImage(imageFile);
+            }
+
             const response = await createArtwork(exhibitionId, {
                 title,
                 artistName,
                 productionYear,
                 medium,
-                imageUrl: imageUrl.trim() ? imageUrl.trim() : null,
+                imageUrl,
                 memo,
             });
 
@@ -54,6 +63,8 @@ function ArtworkCreatePage() {
             }
 
             setMessage("작품 기록 등록에 실패했습니다.");
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -108,12 +119,15 @@ function ArtworkCreatePage() {
                 </div>
 
                 <div>
-                    <label>작품 이미지 URL</label>
+                    <label>작품 이미지</label>
                     <input
-                        value={imageUrl}
-                        placeholder="/uploads/images/example.png"
-                        onChange={(event) => setImageUrl(event.target.value)}
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) => setImageFile(event.target.files?.[0] ?? null)}
                     />
+                    {imageFile && (
+                        <p className="info-text">선택한 파일: {imageFile.name}</p>
+                    )}
                 </div>
 
                 <div>
@@ -128,7 +142,9 @@ function ArtworkCreatePage() {
                 {message && <p className="error-text">{message}</p>}
 
                 <div className="form-actions">
-                    <button type="submit">등록하기</button>
+                    <button type="submit" disabled={uploading}>
+                        {uploading ? "등록 중..." : "등록하기"}
+                    </button>
                     <button
                         type="button"
                         className="subtle-button"

@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { getArtwork, updateArtwork } from "../../api/artworkApi";
+import { uploadImage } from "../../api/fileApi";
 
 function ArtworkEditPage() {
     const navigate = useNavigate();
@@ -16,10 +17,20 @@ function ArtworkEditPage() {
     const [productionYear, setProductionYear] = useState("");
     const [medium, setMedium] = useState("");
     const [imageUrl, setImageUrl] = useState("");
+    const [imageFile, setImageFile] = useState<File | null>(null);
     const [memo, setMemo] = useState("");
 
     const [loading, setLoading] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const [message, setMessage] = useState("");
+
+    const getImageSrc = (currentImageUrl: string) => {
+        if (currentImageUrl.startsWith("http")) {
+            return currentImageUrl;
+        }
+
+        return `${import.meta.env.VITE_API_BASE_URL}${currentImageUrl}`;
+    };
 
     const fetchArtwork = async () => {
         if (
@@ -80,14 +91,21 @@ function ArtworkEditPage() {
         }
 
         setMessage("");
+        setUploading(true);
 
         try {
+            let nextImageUrl: string | null = imageUrl || null;
+
+            if (imageFile) {
+                nextImageUrl = await uploadImage(imageFile);
+            }
+
             const response = await updateArtwork(exhibitionId, artworkId, {
                 title,
                 artistName,
                 productionYear,
                 medium,
-                imageUrl: imageUrl.trim() ? imageUrl.trim() : null,
+                imageUrl: nextImageUrl,
                 memo,
             });
 
@@ -107,6 +125,8 @@ function ArtworkEditPage() {
             }
 
             setMessage("작품 기록 수정에 실패했습니다.");
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -167,12 +187,26 @@ function ArtworkEditPage() {
                 </div>
 
                 <div>
-                    <label>작품 이미지 URL</label>
+                    <label>현재 작품 이미지</label>
+                    <div className="poster-box">
+                        {imageUrl ? (
+                            <img src={getImageSrc(imageUrl)} alt={title} />
+                        ) : (
+                            <span>No image</span>
+                        )}
+                    </div>
+                </div>
+
+                <div>
+                    <label>새 작품 이미지 선택</label>
                     <input
-                        value={imageUrl}
-                        placeholder="/uploads/images/example.png"
-                        onChange={(event) => setImageUrl(event.target.value)}
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) => setImageFile(event.target.files?.[0] ?? null)}
                     />
+                    {imageFile && (
+                        <p className="info-text">선택한 파일: {imageFile.name}</p>
+                    )}
                 </div>
 
                 <div>
@@ -185,7 +219,9 @@ function ArtworkEditPage() {
                 </div>
 
                 <div className="form-actions">
-                    <button type="submit">수정하기</button>
+                    <button type="submit" disabled={uploading}>
+                        {uploading ? "수정 중..." : "수정하기"}
+                    </button>
                     <button
                         type="button"
                         className="subtle-button"

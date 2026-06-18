@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { getExhibition, updateExhibition } from "../../api/exhibitionApi";
+import { uploadImage } from "../../api/fileApi";
 
 function ExhibitionEditPage() {
     const navigate = useNavigate();
@@ -17,10 +18,20 @@ function ExhibitionEditPage() {
     const [endDate, setEndDate] = useState("");
     const [visitDate, setVisitDate] = useState("");
     const [posterImageUrl, setPosterImageUrl] = useState("");
+    const [posterImageFile, setPosterImageFile] = useState<File | null>(null);
     const [memo, setMemo] = useState("");
 
     const [loading, setLoading] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const [message, setMessage] = useState("");
+
+    const getImageSrc = (imageUrl: string) => {
+        if (imageUrl.startsWith("http")) {
+            return imageUrl;
+        }
+
+        return `${import.meta.env.VITE_API_BASE_URL}${imageUrl}`;
+    };
 
     const fetchExhibition = async () => {
         if (!exhibitionId || Number.isNaN(exhibitionId)) {
@@ -73,8 +84,15 @@ function ExhibitionEditPage() {
         }
 
         setMessage("");
+        setUploading(true);
 
         try {
+            let nextPosterImageUrl: string | null = posterImageUrl || null;
+
+            if (posterImageFile) {
+                nextPosterImageUrl = await uploadImage(posterImageFile);
+            }
+
             await updateExhibition(exhibitionId, {
                 title,
                 museumName,
@@ -82,7 +100,7 @@ function ExhibitionEditPage() {
                 startDate,
                 endDate,
                 visitDate,
-                posterImageUrl: posterImageUrl.trim() ? posterImageUrl.trim() : null,
+                posterImageUrl: nextPosterImageUrl,
                 memo,
             });
 
@@ -100,6 +118,8 @@ function ExhibitionEditPage() {
             }
 
             setMessage("전시 기록 수정에 실패했습니다.");
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -185,12 +205,28 @@ function ExhibitionEditPage() {
                 </div>
 
                 <div>
-                    <label>포스터 이미지 URL</label>
+                    <label>현재 포스터 이미지</label>
+                    <div className="poster-box">
+                        {posterImageUrl ? (
+                            <img src={getImageSrc(posterImageUrl)} alt={title} />
+                        ) : (
+                            <span>No image</span>
+                        )}
+                    </div>
+                </div>
+
+                <div>
+                    <label>새 포스터 이미지 선택</label>
                     <input
-                        value={posterImageUrl}
-                        placeholder="/uploads/images/example.png"
-                        onChange={(event) => setPosterImageUrl(event.target.value)}
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) =>
+                            setPosterImageFile(event.target.files?.[0] ?? null)
+                        }
                     />
+                    {posterImageFile && (
+                        <p className="info-text">선택한 파일: {posterImageFile.name}</p>
+                    )}
                 </div>
 
                 <div>
@@ -203,7 +239,9 @@ function ExhibitionEditPage() {
                 </div>
 
                 <div className="form-actions">
-                    <button type="submit">수정하기</button>
+                    <button type="submit" disabled={uploading}>
+                        {uploading ? "수정 중..." : "수정하기"}
+                    </button>
                     <button
                         type="button"
                         className="subtle-button"
