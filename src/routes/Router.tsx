@@ -11,6 +11,9 @@ import ExhibitionCreatePage from "../pages/exhibition/ExhibitionCreatePage";
 import ExhibitionDetailPage from "../pages/exhibition/ExhibitionDetailPage";
 import ExhibitionEditPage from "../pages/exhibition/ExhibitionEditPage";
 import ExhibitionListPage from "../pages/exhibition/ExhibitionListPage";
+import ReviewCreatePage from "../pages/review/ReviewCreatePage";
+import ReviewDetailPage from "../pages/review/ReviewDetailPage";
+import ReviewListPage from "../pages/review/ReviewListPage";
 
 const router = createBrowserRouter([
     {
@@ -46,6 +49,10 @@ const router = createBrowserRouter([
                 element: <ExhibitionEditPage />,
             },
             {
+                path: "exhibitions/:exhibitionId/reviews/new",
+                element: <ReviewCreatePage />,
+            },
+            {
                 path: "exhibitions/:exhibitionId/artworks",
                 element: <ArtworkListPage />,
             },
@@ -60,6 +67,18 @@ const router = createBrowserRouter([
             {
                 path: "exhibitions/:exhibitionId/artworks/:artworkId/edit",
                 element: <ArtworkEditPage />,
+            },
+            {
+                path: "exhibitions/:exhibitionId/artworks/:artworkId/reviews/new",
+                element: <ReviewCreatePage />,
+            },
+            {
+                path: "reviews",
+                element: <ReviewListPage />,
+            },
+            {
+                path: "reviews/:reviewId",
+                element: <ReviewDetailPage />,
             },
         ],
     },
