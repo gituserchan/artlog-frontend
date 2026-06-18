@@ -11,6 +11,8 @@ import ExhibitionCreatePage from "../pages/exhibition/ExhibitionCreatePage";
 import ExhibitionDetailPage from "../pages/exhibition/ExhibitionDetailPage";
 import ExhibitionEditPage from "../pages/exhibition/ExhibitionEditPage";
 import ExhibitionListPage from "../pages/exhibition/ExhibitionListPage";
+import PublicReviewDetailPage from "../pages/publicReview/PublicReviewDetailPage";
+import PublicReviewListPage from "../pages/publicReview/PublicReviewListPage";
 import ReviewCreatePage from "../pages/review/ReviewCreatePage";
 import ReviewDetailPage from "../pages/review/ReviewDetailPage";
 import ReviewEditPage from "../pages/review/ReviewEditPage";
@@ -84,6 +86,14 @@ const router = createBrowserRouter([
             {
                 path: "reviews/:reviewId/edit",
                 element: <ReviewEditPage />,
+            },
+            {
+                path: "public-reviews",
+                element: <PublicReviewListPage />,
+            },
+            {
+                path: "public-reviews/:reviewId",
+                element: <PublicReviewDetailPage />,
             },
         ],
     },
