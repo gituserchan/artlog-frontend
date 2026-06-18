@@ -26,7 +26,9 @@ function Header() {
                     <>
                         <Link to="/exhibitions">내 전시 기록</Link>
                         <Link to="/reviews">내 감상 기록</Link>
+                        <Link to="/mypage/bookmarks">북마크</Link>
                         <Link to="/statistics">통계</Link>
+                        <Link to="/mypage">마이페이지</Link>
                         <button type="button" className="text-button" onClick={handleLogout}>
                             로그아웃
                         </button>

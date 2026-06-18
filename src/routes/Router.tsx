@@ -17,6 +17,8 @@ import ReviewCreatePage from "../pages/review/ReviewCreatePage";
 import ReviewDetailPage from "../pages/review/ReviewDetailPage";
 import ReviewEditPage from "../pages/review/ReviewEditPage";
 import ReviewListPage from "../pages/review/ReviewListPage";
+import BookmarkListPage from "../pages/user/BookmarkListPage";
+import MyPage from "../pages/user/MyPage";
 
 const router = createBrowserRouter([
     {
@@ -94,6 +96,14 @@ const router = createBrowserRouter([
             {
                 path: "public-reviews/:reviewId",
                 element: <PublicReviewDetailPage />,
+            },
+            {
+                path: "mypage",
+                element: <MyPage />,
+            },
+            {
+                path: "mypage/bookmarks",
+                element: <BookmarkListPage />,
             },
         ],
     },
