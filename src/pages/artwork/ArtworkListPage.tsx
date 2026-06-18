@@ -118,12 +118,17 @@ function ArtworkListPage() {
 
                                     <div className="record-card-body">
                                         <h2>{artwork.title}</h2>
-                                        <p>{artwork.artist || "작가 미상"}</p>
+                                        <p>{artwork.artistName || "작가 미상"}</p>
 
                                         <dl>
                                             <div>
                                                 <dt>제작 연도</dt>
                                                 <dd>{artwork.productionYear || "-"}</dd>
+                                            </div>
+
+                                            <div>
+                                                <dt>재료 / 매체</dt>
+                                                <dd>{artwork.medium || "-"}</dd>
                                             </div>
                                         </dl>
                                     </div>

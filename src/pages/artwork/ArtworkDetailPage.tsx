@@ -102,7 +102,9 @@ function ArtworkDetailPage() {
                 <div>
                     <p className="eyebrow">Artwork detail</p>
                     <h1>{artwork.title}</h1>
-                    <p className="page-description">{artwork.artist || "작가 미상"}</p>
+                    <p className="page-description">
+                        {artwork.artistName || "작가 미상"}
+                    </p>
                 </div>
 
                 <div className="detail-actions">
@@ -139,7 +141,7 @@ function ArtworkDetailPage() {
 
                         <div>
                             <dt>작가</dt>
-                            <dd>{artwork.artist || "작가 미상"}</dd>
+                            <dd>{artwork.artistName || "작가 미상"}</dd>
                         </div>
 
                         <div>
@@ -150,11 +152,6 @@ function ArtworkDetailPage() {
                         <div>
                             <dt>재료 / 매체</dt>
                             <dd>{artwork.medium || "-"}</dd>
-                        </div>
-
-                        <div>
-                            <dt>크기</dt>
-                            <dd>{artwork.size || "-"}</dd>
                         </div>
 
                         <div>
@@ -169,8 +166,8 @@ function ArtworkDetailPage() {
                     </dl>
 
                     <div className="memo-box">
-                        <h2>작품 설명 / 메모</h2>
-                        <p>{artwork.description || "작성된 설명이 없습니다."}</p>
+                        <h2>작품 메모</h2>
+                        <p>{artwork.memo || "작성된 메모가 없습니다."}</p>
                     </div>
                 </div>
             </div>

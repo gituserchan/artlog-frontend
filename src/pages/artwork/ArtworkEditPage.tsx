@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import { createArtwork } from "../../api/artworkApi";
+import { getArtwork, updateArtwork } from "../../api/artworkApi";
 
-function ArtworkCreatePage() {
+function ArtworkEditPage() {
     const navigate = useNavigate();
     const params = useParams();
 
     const exhibitionId = Number(params.exhibitionId);
+    const artworkId = Number(params.artworkId);
 
     const [title, setTitle] = useState("");
     const [artistName, setArtistName] = useState("");
@@ -16,20 +17,72 @@ function ArtworkCreatePage() {
     const [medium, setMedium] = useState("");
     const [imageUrl, setImageUrl] = useState("");
     const [memo, setMemo] = useState("");
+
+    const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
+
+    const fetchArtwork = async () => {
+        if (
+            !exhibitionId ||
+            Number.isNaN(exhibitionId) ||
+            !artworkId ||
+            Number.isNaN(artworkId)
+        ) {
+            setMessage("올바르지 않은 작품 기록입니다.");
+            return;
+        }
+
+        setLoading(true);
+        setMessage("");
+
+        try {
+            const response = await getArtwork(exhibitionId, artworkId);
+            const artwork = response.data;
+
+            setTitle(artwork.title);
+            setArtistName(artwork.artistName || "");
+            setProductionYear(artwork.productionYear || "");
+            setMedium(artwork.medium || "");
+            setImageUrl(artwork.imageUrl || "");
+            setMemo(artwork.memo || "");
+        } catch (error) {
+            console.error(error);
+
+            if (axios.isAxiosError(error)) {
+                const errorMessage =
+                    error.response?.data?.message || "작품 기록을 불러오지 못했습니다.";
+
+                setMessage(errorMessage);
+                return;
+            }
+
+            setMessage("작품 기록을 불러오지 못했습니다.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchArtwork();
+    }, [exhibitionId, artworkId]);
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        if (!exhibitionId || Number.isNaN(exhibitionId)) {
-            setMessage("올바르지 않은 전시 기록입니다.");
+        if (
+            !exhibitionId ||
+            Number.isNaN(exhibitionId) ||
+            !artworkId ||
+            Number.isNaN(artworkId)
+        ) {
+            setMessage("올바르지 않은 작품 기록입니다.");
             return;
         }
 
         setMessage("");
 
         try {
-            const response = await createArtwork(exhibitionId, {
+            const response = await updateArtwork(exhibitionId, artworkId, {
                 title,
                 artistName,
                 productionYear,
@@ -38,7 +91,7 @@ function ArtworkCreatePage() {
                 memo,
             });
 
-            alert("작품 기록이 등록되었습니다.");
+            alert("작품 기록이 수정되었습니다.");
             navigate(
                 `/exhibitions/${exhibitionId}/artworks/${response.data.artworkId}`
             );
@@ -47,27 +100,33 @@ function ArtworkCreatePage() {
 
             if (axios.isAxiosError(error)) {
                 const errorMessage =
-                    error.response?.data?.message || "작품 기록 등록에 실패했습니다.";
+                    error.response?.data?.message || "작품 기록 수정에 실패했습니다.";
 
                 setMessage(errorMessage);
                 return;
             }
 
-            setMessage("작품 기록 등록에 실패했습니다.");
+            setMessage("작품 기록 수정에 실패했습니다.");
         }
     };
+
+    if (loading) {
+        return <p className="info-text">작품 기록을 불러오는 중입니다.</p>;
+    }
 
     return (
         <section>
             <div className="page-title-row">
                 <div>
-                    <p className="eyebrow">New artwork</p>
-                    <h1>작품 기록 등록</h1>
+                    <p className="eyebrow">Edit artwork</p>
+                    <h1>작품 기록 수정</h1>
                     <p className="page-description">
-                        전시에서 기억하고 싶은 작품 정보를 기록합니다.
+                        등록한 작품 정보를 수정할 수 있습니다.
                     </p>
                 </div>
             </div>
+
+            {message && <p className="error-text">{message}</p>}
 
             <form className="record-form" onSubmit={handleSubmit}>
                 <div>
@@ -125,14 +184,14 @@ function ArtworkCreatePage() {
                     />
                 </div>
 
-                {message && <p className="error-text">{message}</p>}
-
                 <div className="form-actions">
-                    <button type="submit">등록하기</button>
+                    <button type="submit">수정하기</button>
                     <button
                         type="button"
                         className="subtle-button"
-                        onClick={() => navigate(`/exhibitions/${exhibitionId}/artworks`)}
+                        onClick={() =>
+                            navigate(`/exhibitions/${exhibitionId}/artworks/${artworkId}`)
+                        }
                     >
                         취소
                     </button>
@@ -142,4 +201,4 @@ function ArtworkCreatePage() {
     );
 }
 
-export default ArtworkCreatePage;
+export default ArtworkEditPage;
