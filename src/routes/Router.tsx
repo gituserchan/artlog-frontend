@@ -3,6 +3,9 @@ import Layout from "../components/layout/Layout";
 import HomePage from "../pages/HomePage";
 import LoginPage from "../pages/auth/LoginPage";
 import SignupPage from "../pages/auth/SignupPage";
+import ArtworkCreatePage from "../pages/artwork/ArtworkCreatePage";
+import ArtworkDetailPage from "../pages/artwork/ArtworkDetailPage";
+import ArtworkListPage from "../pages/artwork/ArtworkListPage";
 import ExhibitionCreatePage from "../pages/exhibition/ExhibitionCreatePage";
 import ExhibitionDetailPage from "../pages/exhibition/ExhibitionDetailPage";
 import ExhibitionEditPage from "../pages/exhibition/ExhibitionEditPage";
@@ -40,6 +43,18 @@ const router = createBrowserRouter([
             {
                 path: "exhibitions/:exhibitionId/edit",
                 element: <ExhibitionEditPage />,
+            },
+            {
+                path: "exhibitions/:exhibitionId/artworks",
+                element: <ArtworkListPage />,
+            },
+            {
+                path: "exhibitions/:exhibitionId/artworks/new",
+                element: <ArtworkCreatePage />,
+            },
+            {
+                path: "exhibitions/:exhibitionId/artworks/:artworkId",
+                element: <ArtworkDetailPage />,
             },
         ],
     },

@@ -471,6 +471,18 @@ form + p {
   gap: 10px;
 }
 
+.artwork-meta {
+  margin: 10px 0 0;
+  color: #8a7b68;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.detail-poster span,
+.poster-box span {
+  letter-spacing: -0.02em;
+}
+
 @media (max-width: 920px) {
   .card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -526,6 +538,10 @@ form + p {
 
   .detail-header {
     flex-direction: column;
+  }
+
+  .detail-actions {
+    flex-wrap: wrap;
   }
 
   .detail-layout {
