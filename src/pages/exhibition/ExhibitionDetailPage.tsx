@@ -78,6 +78,14 @@ function ExhibitionDetailPage() {
         }
     };
 
+    const getImageSrc = (imageUrl: string) => {
+        if (imageUrl.startsWith("http")) {
+            return imageUrl;
+        }
+
+        return `${import.meta.env.VITE_API_BASE_URL}${imageUrl}`;
+    };
+
     if (loading) {
         return <p className="info-text">전시 기록을 불러오는 중입니다.</p>;
     }
@@ -116,9 +124,7 @@ function ExhibitionDetailPage() {
                 <div className="detail-poster">
                     {exhibition.posterImageUrl ? (
                         <img
-                            src={`${import.meta.env.VITE_API_BASE_URL}${
-                                exhibition.posterImageUrl
-                            }`}
+                            src={getImageSrc(exhibition.posterImageUrl)}
                             alt={exhibition.title}
                         />
                     ) : (
@@ -171,6 +177,12 @@ function ExhibitionDetailPage() {
             <div className="bottom-actions">
                 <Link to="/exhibitions" className="secondary-link">
                     목록으로
+                </Link>
+                <Link
+                    to={`/exhibitions/${exhibition.exhibitionId}/reviews/new`}
+                    className="secondary-link"
+                >
+                    전시 감상 작성
                 </Link>
                 <Link
                     to={`/exhibitions/${exhibition.exhibitionId}/artworks`}

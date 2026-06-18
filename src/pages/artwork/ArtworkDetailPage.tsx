@@ -84,6 +84,14 @@ function ArtworkDetailPage() {
         }
     };
 
+    const getImageSrc = (imageUrl: string) => {
+        if (imageUrl.startsWith("http")) {
+            return imageUrl;
+        }
+
+        return `${import.meta.env.VITE_API_BASE_URL}${imageUrl}`;
+    };
+
     if (loading) {
         return <p className="info-text">작품 기록을 불러오는 중입니다.</p>;
     }
@@ -123,10 +131,7 @@ function ArtworkDetailPage() {
             <div className="detail-layout">
                 <div className="detail-poster">
                     {artwork.imageUrl ? (
-                        <img
-                            src={`${import.meta.env.VITE_API_BASE_URL}${artwork.imageUrl}`}
-                            alt={artwork.title}
-                        />
+                        <img src={getImageSrc(artwork.imageUrl)} alt={artwork.title} />
                     ) : (
                         <span>No image</span>
                     )}
@@ -178,6 +183,12 @@ function ArtworkDetailPage() {
                     className="secondary-link"
                 >
                     작품 목록으로
+                </Link>
+                <Link
+                    to={`/exhibitions/${exhibitionId}/artworks/${artwork.artworkId}/reviews/new`}
+                    className="secondary-link"
+                >
+                    작품 감상 작성
                 </Link>
                 <Link to={`/exhibitions/${exhibitionId}`} className="primary-link">
                     전시 상세로
