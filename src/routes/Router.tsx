@@ -5,6 +5,7 @@ import LoginPage from "../pages/auth/LoginPage";
 import SignupPage from "../pages/auth/SignupPage";
 import ExhibitionCreatePage from "../pages/exhibition/ExhibitionCreatePage";
 import ExhibitionDetailPage from "../pages/exhibition/ExhibitionDetailPage";
+import ExhibitionEditPage from "../pages/exhibition/ExhibitionEditPage";
 import ExhibitionListPage from "../pages/exhibition/ExhibitionListPage";
 
 const router = createBrowserRouter([
@@ -35,6 +36,10 @@ const router = createBrowserRouter([
             {
                 path: "exhibitions/:exhibitionId",
                 element: <ExhibitionDetailPage />,
+            },
+            {
+                path: "exhibitions/:exhibitionId/edit",
+                element: <ExhibitionEditPage />,
             },
         ],
     },
