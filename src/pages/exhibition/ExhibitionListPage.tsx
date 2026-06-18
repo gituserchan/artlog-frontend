@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getExhibitions, searchExhibitions } from "../../api/exhibitionApi";
 import type { ExhibitionSimpleResponse } from "../../types/exhibition";
 
 function ExhibitionListPage() {
+    const navigate = useNavigate();
+
     const [exhibitions, setExhibitions] = useState<ExhibitionSimpleResponse[]>([]);
     const [keyword, setKeyword] = useState("");
     const [page, setPage] = useState(0);
@@ -78,7 +81,9 @@ function ExhibitionListPage() {
                     </p>
                 </div>
 
-                <button type="button">전시 등록</button>
+                <button type="button" onClick={() => navigate("/exhibitions/new")}>
+                    전시 등록
+                </button>
             </div>
 
             <div className="search-box">
@@ -117,7 +122,13 @@ function ExhibitionListPage() {
                     ) : (
                         <div className="card-grid">
                             {exhibitions.map((exhibition) => (
-                                <article key={exhibition.exhibitionId} className="record-card">
+                                <article
+                                    key={exhibition.exhibitionId}
+                                    className="record-card clickable-card"
+                                    onClick={() =>
+                                        navigate(`/exhibitions/${exhibition.exhibitionId}`)
+                                    }
+                                >
                                     <div className="poster-box">
                                         {exhibition.posterImageUrl ? (
                                             <img
