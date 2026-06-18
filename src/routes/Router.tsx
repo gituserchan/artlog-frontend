@@ -13,6 +13,7 @@ import ExhibitionEditPage from "../pages/exhibition/ExhibitionEditPage";
 import ExhibitionListPage from "../pages/exhibition/ExhibitionListPage";
 import ReviewCreatePage from "../pages/review/ReviewCreatePage";
 import ReviewDetailPage from "../pages/review/ReviewDetailPage";
+import ReviewEditPage from "../pages/review/ReviewEditPage";
 import ReviewListPage from "../pages/review/ReviewListPage";
 
 const router = createBrowserRouter([
@@ -79,6 +80,10 @@ const router = createBrowserRouter([
             {
                 path: "reviews/:reviewId",
                 element: <ReviewDetailPage />,
+            },
+            {
+                path: "reviews/:reviewId/edit",
+                element: <ReviewEditPage />,
             },
         ],
     },
