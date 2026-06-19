@@ -8,22 +8,36 @@ import {
     unbookmarkReview,
     unlikeReview,
 } from "../../api/publicReviewApi";
+import {
+    createReviewComment,
+    deleteReviewComment,
+    getReviewComments,
+} from "../../api/reviewCommentApi";
 import type { PublicReviewResponse } from "../../types/publicReview";
+import type { ReviewCommentResponse } from "../../types/reviewComment";
 
 function PublicReviewDetailPage() {
     const params = useParams();
 
     const reviewId = Number(params.reviewId);
+    const accessToken = localStorage.getItem("accessToken");
+    const isLoggedIn = !!accessToken;
 
     const [review, setReview] = useState<PublicReviewResponse | null>(null);
+    const [comments, setComments] = useState<ReviewCommentResponse[]>([]);
+    const [commentContent, setCommentContent] = useState("");
+
     const [liked, setLiked] = useState(false);
     const [bookmarked, setBookmarked] = useState(false);
     const [likeCount, setLikeCount] = useState(0);
     const [bookmarkCount, setBookmarkCount] = useState(0);
+
     const [loading, setLoading] = useState(false);
+    const [commentLoading, setCommentLoading] = useState(false);
     const [likeLoading, setLikeLoading] = useState(false);
     const [bookmarkLoading, setBookmarkLoading] = useState(false);
     const [message, setMessage] = useState("");
+    const [commentMessage, setCommentMessage] = useState("");
 
     const getImageSrc = (imageUrl: string) => {
         if (imageUrl.startsWith("http")) {
@@ -88,8 +102,27 @@ function PublicReviewDetailPage() {
         }
     };
 
+    const fetchComments = async () => {
+        if (!reviewId || Number.isNaN(reviewId)) {
+            return;
+        }
+
+        setCommentMessage("");
+
+        try {
+            const response = await getReviewComments(reviewId);
+            setComments(response.data);
+        } catch (error) {
+            console.error(error);
+            setCommentMessage(
+                getErrorMessage(error, "댓글 목록을 불러오지 못했습니다.")
+            );
+        }
+    };
+
     useEffect(() => {
         fetchPublicReview();
+        fetchComments();
     }, [reviewId]);
 
     const handleLikeClick = async () => {
@@ -159,6 +192,76 @@ function PublicReviewDetailPage() {
             );
         } finally {
             setBookmarkLoading(false);
+        }
+    };
+
+    const handleCommentSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        if (!review) {
+            return;
+        }
+
+        if (!commentContent.trim()) {
+            setCommentMessage("댓글 내용을 입력해주세요.");
+            return;
+        }
+
+        if (commentContent.trim().length > 500) {
+            setCommentMessage("댓글은 500자 이하로 입력해주세요.");
+            return;
+        }
+
+        setCommentLoading(true);
+        setCommentMessage("");
+
+        try {
+            const response = await createReviewComment(review.reviewId, {
+                content: commentContent.trim(),
+            });
+
+            setComments((prevComments) => [...prevComments, response.data]);
+            setCommentContent("");
+        } catch (error) {
+            console.error(error);
+
+            setCommentMessage(
+                getErrorMessage(
+                    error,
+                    "댓글 작성에 실패했습니다. 로그인이 필요할 수 있습니다."
+                )
+            );
+        } finally {
+            setCommentLoading(false);
+        }
+    };
+
+    const handleCommentDelete = async (commentId: number) => {
+        if (!review || commentLoading) {
+            return;
+        }
+
+        const confirmed = window.confirm("댓글을 삭제할까요?");
+
+        if (!confirmed) {
+            return;
+        }
+
+        setCommentLoading(true);
+        setCommentMessage("");
+
+        try {
+            await deleteReviewComment(review.reviewId, commentId);
+
+            setComments((prevComments) =>
+                prevComments.filter((comment) => comment.commentId !== commentId)
+            );
+        } catch (error) {
+            console.error(error);
+
+            setCommentMessage(getErrorMessage(error, "댓글 삭제에 실패했습니다."));
+        } finally {
+            setCommentLoading(false);
         }
     };
 
@@ -325,6 +428,114 @@ function PublicReviewDetailPage() {
                     <h2>감상 내용</h2>
                     <p>{review.content}</p>
                 </div>
+            </div>
+
+            <div className="detail-card" style={{ marginTop: "28px" }}>
+                <div className="page-title-row" style={{ marginBottom: "20px" }}>
+                    <div>
+                        <p className="eyebrow">Comments</p>
+                        <h1 style={{ fontSize: "30px" }}>댓글 {comments.length}개</h1>
+                        <p className="page-description">
+                            공개 감상에 대한 의견을 남길 수 있습니다.
+                        </p>
+                    </div>
+                </div>
+
+                {commentMessage && <p className="error-text">{commentMessage}</p>}
+
+                {isLoggedIn ? (
+                    <form
+                        className="record-form"
+                        style={{ maxWidth: "100%", marginBottom: "24px" }}
+                        onSubmit={handleCommentSubmit}
+                    >
+                        <div>
+                            <label>댓글 작성</label>
+                            <textarea
+                                value={commentContent}
+                                maxLength={500}
+                                placeholder="댓글을 입력하세요."
+                                onChange={(event) => setCommentContent(event.target.value)}
+                            />
+                            <p className="page-description">
+                                {commentContent.length} / 500자
+                            </p>
+                        </div>
+
+                        <div className="form-actions">
+                            <button type="submit" disabled={commentLoading}>
+                                {commentLoading ? "작성 중..." : "댓글 작성"}
+                            </button>
+                        </div>
+                    </form>
+                ) : (
+                    <div className="empty-box" style={{ marginBottom: "24px" }}>
+                        <p>댓글을 작성하려면 로그인이 필요합니다.</p>
+                        <Link to="/login" className="primary-link" style={{ marginTop: "12px" }}>
+                            로그인하기
+                        </Link>
+                    </div>
+                )}
+
+                {comments.length === 0 ? (
+                    <div className="empty-box">
+                        <p>아직 작성된 댓글이 없습니다.</p>
+                    </div>
+                ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                        {comments.map((comment) => (
+                            <article
+                                key={comment.commentId}
+                                style={{
+                                    padding: "18px",
+                                    border: "1px solid #e0d7ca",
+                                    borderRadius: "16px",
+                                    background: "#fffaf2",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        gap: "16px",
+                                        alignItems: "flex-start",
+                                    }}
+                                >
+                                    <div>
+                                        <p className="eyebrow" style={{ marginBottom: "6px" }}>
+                                            {comment.nickname}
+                                            {comment.writtenByMe ? " · 내 댓글" : ""}
+                                        </p>
+                                        <p
+                                            style={{
+                                                margin: 0,
+                                                color: "#4f4840",
+                                                lineHeight: 1.7,
+                                                whiteSpace: "pre-wrap",
+                                            }}
+                                        >
+                                            {comment.content}
+                                        </p>
+                                        <p className="page-description">
+                                            {formatCreatedAt(comment.createdAt)}
+                                        </p>
+                                    </div>
+
+                                    {comment.writtenByMe && (
+                                        <button
+                                            type="button"
+                                            className="danger-button"
+                                            disabled={commentLoading}
+                                            onClick={() => handleCommentDelete(comment.commentId)}
+                                        >
+                                            삭제
+                                        </button>
+                                    )}
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                )}
             </div>
 
             <div className="bottom-actions">
