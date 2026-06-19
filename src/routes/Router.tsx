@@ -20,6 +20,7 @@ import ReviewListPage from "../pages/review/ReviewListPage";
 import StatisticsPage from "../pages/statistics/StatisticsPage";
 import BookmarkListPage from "../pages/user/BookmarkListPage";
 import MyPage from "../pages/user/MyPage";
+import ProtectedRoute from "./ProtectedRoute";
 
 const router = createBrowserRouter([
     {
@@ -39,58 +40,6 @@ const router = createBrowserRouter([
                 element: <SignupPage />,
             },
             {
-                path: "exhibitions",
-                element: <ExhibitionListPage />,
-            },
-            {
-                path: "exhibitions/new",
-                element: <ExhibitionCreatePage />,
-            },
-            {
-                path: "exhibitions/:exhibitionId",
-                element: <ExhibitionDetailPage />,
-            },
-            {
-                path: "exhibitions/:exhibitionId/edit",
-                element: <ExhibitionEditPage />,
-            },
-            {
-                path: "exhibitions/:exhibitionId/reviews/new",
-                element: <ReviewCreatePage />,
-            },
-            {
-                path: "exhibitions/:exhibitionId/artworks",
-                element: <ArtworkListPage />,
-            },
-            {
-                path: "exhibitions/:exhibitionId/artworks/new",
-                element: <ArtworkCreatePage />,
-            },
-            {
-                path: "exhibitions/:exhibitionId/artworks/:artworkId",
-                element: <ArtworkDetailPage />,
-            },
-            {
-                path: "exhibitions/:exhibitionId/artworks/:artworkId/edit",
-                element: <ArtworkEditPage />,
-            },
-            {
-                path: "exhibitions/:exhibitionId/artworks/:artworkId/reviews/new",
-                element: <ReviewCreatePage />,
-            },
-            {
-                path: "reviews",
-                element: <ReviewListPage />,
-            },
-            {
-                path: "reviews/:reviewId",
-                element: <ReviewDetailPage />,
-            },
-            {
-                path: "reviews/:reviewId/edit",
-                element: <ReviewEditPage />,
-            },
-            {
                 path: "public-reviews",
                 element: <PublicReviewListPage />,
             },
@@ -99,16 +48,132 @@ const router = createBrowserRouter([
                 element: <PublicReviewDetailPage />,
             },
             {
+                path: "exhibitions",
+                element: (
+                    <ProtectedRoute>
+                        <ExhibitionListPage />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "exhibitions/new",
+                element: (
+                    <ProtectedRoute>
+                        <ExhibitionCreatePage />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "exhibitions/:exhibitionId",
+                element: (
+                    <ProtectedRoute>
+                        <ExhibitionDetailPage />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "exhibitions/:exhibitionId/edit",
+                element: (
+                    <ProtectedRoute>
+                        <ExhibitionEditPage />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "exhibitions/:exhibitionId/reviews/new",
+                element: (
+                    <ProtectedRoute>
+                        <ReviewCreatePage />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "exhibitions/:exhibitionId/artworks",
+                element: (
+                    <ProtectedRoute>
+                        <ArtworkListPage />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "exhibitions/:exhibitionId/artworks/new",
+                element: (
+                    <ProtectedRoute>
+                        <ArtworkCreatePage />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "exhibitions/:exhibitionId/artworks/:artworkId",
+                element: (
+                    <ProtectedRoute>
+                        <ArtworkDetailPage />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "exhibitions/:exhibitionId/artworks/:artworkId/edit",
+                element: (
+                    <ProtectedRoute>
+                        <ArtworkEditPage />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "exhibitions/:exhibitionId/artworks/:artworkId/reviews/new",
+                element: (
+                    <ProtectedRoute>
+                        <ReviewCreatePage />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "reviews",
+                element: (
+                    <ProtectedRoute>
+                        <ReviewListPage />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "reviews/:reviewId",
+                element: (
+                    <ProtectedRoute>
+                        <ReviewDetailPage />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "reviews/:reviewId/edit",
+                element: (
+                    <ProtectedRoute>
+                        <ReviewEditPage />
+                    </ProtectedRoute>
+                ),
+            },
+            {
                 path: "mypage",
-                element: <MyPage />,
+                element: (
+                    <ProtectedRoute>
+                        <MyPage />
+                    </ProtectedRoute>
+                ),
             },
             {
                 path: "mypage/bookmarks",
-                element: <BookmarkListPage />,
+                element: (
+                    <ProtectedRoute>
+                        <BookmarkListPage />
+                    </ProtectedRoute>
+                ),
             },
             {
                 path: "statistics",
-                element: <StatisticsPage />,
+                element: (
+                    <ProtectedRoute>
+                        <StatisticsPage />
+                    </ProtectedRoute>
+                ),
             },
         ],
     },
