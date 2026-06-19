@@ -21,6 +21,14 @@ function BookmarkListPage() {
         return `${import.meta.env.VITE_API_BASE_URL}${imageUrl}`;
     };
 
+    const getRepresentativeImageUrl = (bookmark: ReviewBookmarkResponse) => {
+        if (!bookmark.imageUrls || bookmark.imageUrls.length === 0) {
+            return null;
+        }
+
+        return bookmark.imageUrls[0];
+    };
+
     const formatReviewType = (reviewType: string) => {
         return reviewType === "EXHIBITION" ? "전시 감상" : "작품 감상";
     };
@@ -96,95 +104,74 @@ function BookmarkListPage() {
                         </div>
                     ) : (
                         <div className="card-grid">
-                            {bookmarks.map((bookmark) => (
-                                <article
-                                    key={bookmark.bookmarkId}
-                                    className="record-card clickable-card"
-                                    onClick={() =>
-                                        navigate(`/public-reviews/${bookmark.reviewId}`)
-                                    }
-                                >
-                                    {bookmark.imageUrl && (
-                                        <div className="poster-box">
-                                            <img
-                                                src={getImageSrc(bookmark.imageUrl)}
-                                                alt={bookmark.title}
-                                            />
-                                        </div>
-                                    )}
+                            {bookmarks.map((bookmark) => {
+                                const representativeImageUrl =
+                                    getRepresentativeImageUrl(bookmark);
 
-                                    <div className="record-card-body">
-                                        <p className="eyebrow">
-                                            {formatReviewType(bookmark.reviewType)}
-                                        </p>
+                                return (
+                                    <article
+                                        key={bookmark.bookmarkId}
+                                        className="record-card clickable-card"
+                                        onClick={() =>
+                                            navigate(`/public-reviews/${bookmark.reviewId}`)
+                                        }
+                                    >
+                                        {representativeImageUrl && (
+                                            <div className="poster-box">
+                                                <img
+                                                    src={getImageSrc(representativeImageUrl)}
+                                                    alt={bookmark.title}
+                                                />
+                                            </div>
+                                        )}
 
-                                        <p
-                                            style={{
-                                                margin: "0 0 6px",
-                                                color: "#8a7b68",
-                                                fontSize: "13px",
-                                                fontWeight: 800,
-                                            }}
-                                        >
-                                            감상 제목
-                                        </p>
+                                        <div className="record-card-body">
+                                            <p className="eyebrow">
+                                                {formatReviewType(bookmark.reviewType)}
+                                            </p>
 
-                                        <h2>{bookmark.title}</h2>
-
-                                        <p>작성자: {bookmark.nickname}</p>
-
-                                        <div
-                                            style={{
-                                                marginTop: "18px",
-                                                padding: "14px",
-                                                border: "1px solid #e0d7ca",
-                                                borderRadius: "14px",
-                                                background: "#f7f0e6",
-                                            }}
-                                        >
                                             <p
                                                 style={{
-                                                    margin: "0 0 10px",
-                                                    color: "#8a6f4d",
+                                                    margin: "0 0 6px",
+                                                    color: "#8a7b68",
                                                     fontSize: "13px",
-                                                    fontWeight: 900,
+                                                    fontWeight: 800,
                                                 }}
                                             >
-                                                감상 대상
+                                                감상 제목
                                             </p>
+
+                                            <h2>{bookmark.title}</h2>
+
+                                            <p>작성자: {bookmark.nickname}</p>
 
                                             <div
                                                 style={{
-                                                    display: "flex",
-                                                    flexDirection: "column",
-                                                    gap: "8px",
+                                                    marginTop: "18px",
+                                                    padding: "14px",
+                                                    border: "1px solid #e0d7ca",
+                                                    borderRadius: "14px",
+                                                    background: "#f7f0e6",
                                                 }}
                                             >
-                                                <div>
-                                                    <p
-                                                        style={{
-                                                            margin: 0,
-                                                            color: "#8a7b68",
-                                                            fontSize: "12px",
-                                                            fontWeight: 800,
-                                                        }}
-                                                    >
-                                                        전시명
-                                                    </p>
-                                                    <p
-                                                        style={{
-                                                            margin: "3px 0 0",
-                                                            color: "#2f2a24",
-                                                            fontSize: "16px",
-                                                            fontWeight: 800,
-                                                            lineHeight: 1.4,
-                                                        }}
-                                                    >
-                                                        {bookmark.exhibitionTitle}
-                                                    </p>
-                                                </div>
+                                                <p
+                                                    style={{
+                                                        margin: "0 0 10px",
+                                                        color: "#8a6f4d",
+                                                        fontSize: "13px",
+                                                        fontWeight: 900,
+                                                    }}
+                                                >
+                                                    감상 대상
+                                                </p>
 
-                                                {bookmark.reviewType === "ARTWORK" && (
+                                                <div
+                                                    style={{
+                                                        display: "flex",
+                                                        flexDirection: "column",
+                                                        gap: "8px",
+                                                    }}
+                                                >
                                                     <div>
                                                         <p
                                                             style={{
@@ -194,7 +181,7 @@ function BookmarkListPage() {
                                                                 fontWeight: 800,
                                                             }}
                                                         >
-                                                            작품명
+                                                            전시명
                                                         </p>
                                                         <p
                                                             style={{
@@ -205,37 +192,68 @@ function BookmarkListPage() {
                                                                 lineHeight: 1.4,
                                                             }}
                                                         >
-                                                            {bookmark.artworkTitle || "-"}
+                                                            {bookmark.exhibitionTitle}
                                                         </p>
                                                     </div>
-                                                )}
+
+                                                    {bookmark.reviewType === "ARTWORK" && (
+                                                        <div>
+                                                            <p
+                                                                style={{
+                                                                    margin: 0,
+                                                                    color: "#8a7b68",
+                                                                    fontSize: "12px",
+                                                                    fontWeight: 800,
+                                                                }}
+                                                            >
+                                                                작품명
+                                                            </p>
+                                                            <p
+                                                                style={{
+                                                                    margin: "3px 0 0",
+                                                                    color: "#2f2a24",
+                                                                    fontSize: "16px",
+                                                                    fontWeight: 800,
+                                                                    lineHeight: 1.4,
+                                                                }}
+                                                            >
+                                                                {bookmark.artworkTitle || "-"}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
+
+                                            <dl>
+                                                <div>
+                                                    <dt>평점</dt>
+                                                    <dd>{bookmark.rating}점</dd>
+                                                </div>
+
+                                                <div>
+                                                    <dt>감정 태그</dt>
+                                                    <dd>{bookmark.emotionTag || "-"}</dd>
+                                                </div>
+
+                                                <div>
+                                                    <dt>키워드</dt>
+                                                    <dd>{bookmark.keywords || "-"}</dd>
+                                                </div>
+
+                                                <div>
+                                                    <dt>이미지</dt>
+                                                    <dd>{bookmark.imageUrls.length}장</dd>
+                                                </div>
+
+                                                <div>
+                                                    <dt>북마크일</dt>
+                                                    <dd>{formatDateTime(bookmark.bookmarkedAt)}</dd>
+                                                </div>
+                                            </dl>
                                         </div>
-
-                                        <dl>
-                                            <div>
-                                                <dt>평점</dt>
-                                                <dd>{bookmark.rating}점</dd>
-                                            </div>
-
-                                            <div>
-                                                <dt>감정 태그</dt>
-                                                <dd>{bookmark.emotionTag || "-"}</dd>
-                                            </div>
-
-                                            <div>
-                                                <dt>키워드</dt>
-                                                <dd>{bookmark.keywords || "-"}</dd>
-                                            </div>
-
-                                            <div>
-                                                <dt>북마크일</dt>
-                                                <dd>{formatDateTime(bookmark.bookmarkedAt)}</dd>
-                                            </div>
-                                        </dl>
-                                    </div>
-                                </article>
-                            ))}
+                                    </article>
+                                );
+                            })}
                         </div>
                     )}
 

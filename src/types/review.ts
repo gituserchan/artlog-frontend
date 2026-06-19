@@ -30,7 +30,7 @@ export interface ReviewResponse {
     emotionTag: string | null;
     keywords: string | null;
     wantToRevisit: boolean | null;
-    imageUrl: string | null;
+    imageUrls: string[];
     createdAt: string;
     updatedAt: string;
 }
@@ -42,7 +42,7 @@ export interface ReviewCreateRequest {
     emotionTag: string;
     keywords: string;
     wantToRevisit: boolean;
-    imageUrl: string | null;
+    imageUrls: string[];
     visibility: ReviewVisibility;
 }
 
@@ -53,6 +53,6 @@ export interface ReviewUpdateRequest {
     emotionTag: string;
     keywords: string;
     wantToRevisit: boolean;
-    imageUrl: string | null;
+    imageUrls: string[];
     visibility: ReviewVisibility;
 }

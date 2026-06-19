@@ -21,6 +21,14 @@ function PublicReviewListPage() {
         return `${import.meta.env.VITE_API_BASE_URL}${imageUrl}`;
     };
 
+    const getRepresentativeImageUrl = (review: PublicReviewSimpleResponse) => {
+        if (!review.imageUrls || review.imageUrls.length === 0) {
+            return null;
+        }
+
+        return review.imageUrls[0];
+    };
+
     const formatReviewType = (review: PublicReviewSimpleResponse) => {
         return review.reviewType === "EXHIBITION" ? "전시 감상" : "작품 감상";
     };
@@ -94,77 +102,58 @@ function PublicReviewListPage() {
                         </div>
                     ) : (
                         <div className="card-grid">
-                            {reviews.map((review) => (
-                                <article
-                                    key={review.reviewId}
-                                    className="record-card clickable-card"
-                                    onClick={() => navigate(`/public-reviews/${review.reviewId}`)}
-                                >
-                                    {review.imageUrl && (
-                                        <div className="poster-box">
-                                            <img src={getImageSrc(review.imageUrl)} alt={review.title} />
-                                        </div>
-                                    )}
+                            {reviews.map((review) => {
+                                const representativeImageUrl = getRepresentativeImageUrl(review);
 
-                                    <div className="record-card-body">
-                                        <p className="eyebrow">{formatReviewType(review)}</p>
+                                return (
+                                    <article
+                                        key={review.reviewId}
+                                        className="record-card clickable-card"
+                                        onClick={() => navigate(`/public-reviews/${review.reviewId}`)}
+                                    >
+                                        {representativeImageUrl && (
+                                            <div className="poster-box">
+                                                <img
+                                                    src={getImageSrc(representativeImageUrl)}
+                                                    alt={review.title}
+                                                />
+                                            </div>
+                                        )}
 
-                                        <h2>{review.title}</h2>
+                                        <div className="record-card-body">
+                                            <p className="eyebrow">{formatReviewType(review)}</p>
 
-                                        <p>작성자: {review.nickname}</p>
+                                            <h2>{review.title}</h2>
 
-                                        <div
-                                            style={{
-                                                marginTop: "18px",
-                                                padding: "14px",
-                                                border: "1px solid #e0d7ca",
-                                                borderRadius: "14px",
-                                                background: "#f7f0e6",
-                                            }}
-                                        >
-                                            <p
-                                                style={{
-                                                    margin: "0 0 10px",
-                                                    color: "#8a6f4d",
-                                                    fontSize: "13px",
-                                                    fontWeight: 900,
-                                                }}
-                                            >
-                                                감상 대상
-                                            </p>
+                                            <p>작성자: {review.nickname}</p>
 
                                             <div
                                                 style={{
-                                                    display: "flex",
-                                                    flexDirection: "column",
-                                                    gap: "8px",
+                                                    marginTop: "18px",
+                                                    padding: "14px",
+                                                    border: "1px solid #e0d7ca",
+                                                    borderRadius: "14px",
+                                                    background: "#f7f0e6",
                                                 }}
                                             >
-                                                <div>
-                                                    <p
-                                                        style={{
-                                                            margin: 0,
-                                                            color: "#8a7b68",
-                                                            fontSize: "12px",
-                                                            fontWeight: 800,
-                                                        }}
-                                                    >
-                                                        전시명
-                                                    </p>
-                                                    <p
-                                                        style={{
-                                                            margin: "3px 0 0",
-                                                            color: "#2f2a24",
-                                                            fontSize: "16px",
-                                                            fontWeight: 800,
-                                                            lineHeight: 1.4,
-                                                        }}
-                                                    >
-                                                        {review.exhibitionTitle}
-                                                    </p>
-                                                </div>
+                                                <p
+                                                    style={{
+                                                        margin: "0 0 10px",
+                                                        color: "#8a6f4d",
+                                                        fontSize: "13px",
+                                                        fontWeight: 900,
+                                                    }}
+                                                >
+                                                    감상 대상
+                                                </p>
 
-                                                {review.reviewType === "ARTWORK" && (
+                                                <div
+                                                    style={{
+                                                        display: "flex",
+                                                        flexDirection: "column",
+                                                        gap: "8px",
+                                                    }}
+                                                >
                                                     <div>
                                                         <p
                                                             style={{
@@ -174,7 +163,7 @@ function PublicReviewListPage() {
                                                                 fontWeight: 800,
                                                             }}
                                                         >
-                                                            작품명
+                                                            전시명
                                                         </p>
                                                         <p
                                                             style={{
@@ -185,42 +174,73 @@ function PublicReviewListPage() {
                                                                 lineHeight: 1.4,
                                                             }}
                                                         >
-                                                            {review.artworkTitle || "-"}
+                                                            {review.exhibitionTitle}
                                                         </p>
                                                     </div>
-                                                )}
+
+                                                    {review.reviewType === "ARTWORK" && (
+                                                        <div>
+                                                            <p
+                                                                style={{
+                                                                    margin: 0,
+                                                                    color: "#8a7b68",
+                                                                    fontSize: "12px",
+                                                                    fontWeight: 800,
+                                                                }}
+                                                            >
+                                                                작품명
+                                                            </p>
+                                                            <p
+                                                                style={{
+                                                                    margin: "3px 0 0",
+                                                                    color: "#2f2a24",
+                                                                    fontSize: "16px",
+                                                                    fontWeight: 800,
+                                                                    lineHeight: 1.4,
+                                                                }}
+                                                            >
+                                                                {review.artworkTitle || "-"}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
+
+                                            <dl>
+                                                <div>
+                                                    <dt>평점</dt>
+                                                    <dd>{review.rating}점</dd>
+                                                </div>
+
+                                                <div>
+                                                    <dt>감정 태그</dt>
+                                                    <dd>{review.emotionTag || "-"}</dd>
+                                                </div>
+
+                                                <div>
+                                                    <dt>이미지</dt>
+                                                    <dd>{review.imageUrls.length}장</dd>
+                                                </div>
+
+                                                <div>
+                                                    <dt>좋아요</dt>
+                                                    <dd>{review.likeCount}</dd>
+                                                </div>
+
+                                                <div>
+                                                    <dt>북마크</dt>
+                                                    <dd>{review.bookmarkCount}</dd>
+                                                </div>
+
+                                                <div>
+                                                    <dt>작성일</dt>
+                                                    <dd>{formatCreatedAt(review.createdAt)}</dd>
+                                                </div>
+                                            </dl>
                                         </div>
-
-                                        <dl>
-                                            <div>
-                                                <dt>평점</dt>
-                                                <dd>{review.rating}점</dd>
-                                            </div>
-
-                                            <div>
-                                                <dt>감정 태그</dt>
-                                                <dd>{review.emotionTag || "-"}</dd>
-                                            </div>
-
-                                            <div>
-                                                <dt>좋아요</dt>
-                                                <dd>{review.likeCount}</dd>
-                                            </div>
-
-                                            <div>
-                                                <dt>북마크</dt>
-                                                <dd>{review.bookmarkCount}</dd>
-                                            </div>
-
-                                            <div>
-                                                <dt>작성일</dt>
-                                                <dd>{formatCreatedAt(review.createdAt)}</dd>
-                                            </div>
-                                        </dl>
-                                    </div>
-                                </article>
-                            ))}
+                                    </article>
+                                );
+                            })}
                         </div>
                     )}
 
