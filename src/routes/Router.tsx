@@ -13,6 +13,7 @@ import ExhibitionEditPage from "../pages/exhibition/ExhibitionEditPage";
 import ExhibitionListPage from "../pages/exhibition/ExhibitionListPage";
 import PublicReviewDetailPage from "../pages/publicReview/PublicReviewDetailPage";
 import PublicReviewListPage from "../pages/publicReview/PublicReviewListPage";
+import ReviewCalendarPage from "../pages/review/ReviewCalendarPage";
 import ReviewCreatePage from "../pages/review/ReviewCreatePage";
 import ReviewDetailPage from "../pages/review/ReviewDetailPage";
 import ReviewEditPage from "../pages/review/ReviewEditPage";
@@ -132,6 +133,14 @@ const router = createBrowserRouter([
                 element: (
                     <ProtectedRoute>
                         <ReviewListPage />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "calendar",
+                element: (
+                    <ProtectedRoute>
+                        <ReviewCalendarPage />
                     </ProtectedRoute>
                 ),
             },
