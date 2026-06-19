@@ -55,32 +55,6 @@ function PublicReviewDetailPage() {
             : "전시 기록 보기";
     };
 
-    const isAlreadyLikedError = (error: unknown) => {
-        if (!axios.isAxiosError(error)) {
-            return false;
-        }
-
-        const errorMessage = error.response?.data?.message || "";
-
-        return (
-            errorMessage.includes("이미") &&
-            (errorMessage.includes("좋아요") || errorMessage.includes("like"))
-        );
-    };
-
-    const isAlreadyBookmarkedError = (error: unknown) => {
-        if (!axios.isAxiosError(error)) {
-            return false;
-        }
-
-        const errorMessage = error.response?.data?.message || "";
-
-        return (
-            errorMessage.includes("이미") &&
-            (errorMessage.includes("북마크") || errorMessage.includes("bookmark"))
-        );
-    };
-
     const getErrorMessage = (error: unknown, fallbackMessage: string) => {
         if (axios.isAxiosError(error)) {
             return error.response?.data?.message || fallbackMessage;
@@ -104,8 +78,8 @@ function PublicReviewDetailPage() {
             setReview(response.data);
             setLikeCount(response.data.likeCount);
             setBookmarkCount(response.data.bookmarkCount);
-            setLiked(false);
-            setBookmarked(false);
+            setLiked(response.data.likedByMe);
+            setBookmarked(response.data.bookmarkedByMe);
         } catch (error) {
             console.error(error);
             setMessage(getErrorMessage(error, "공개 감상을 불러오지 못했습니다."));
@@ -142,21 +116,6 @@ function PublicReviewDetailPage() {
         } catch (error) {
             console.error(error);
 
-            if (isAlreadyLikedError(error)) {
-                try {
-                    await unlikeReview(review.reviewId);
-
-                    setLiked(false);
-                    setLikeCount((prevCount) => Math.max(prevCount - 1, 0));
-                    setMessage("");
-                    return;
-                } catch (unlikeError) {
-                    console.error(unlikeError);
-                    setMessage(getErrorMessage(unlikeError, "좋아요 취소에 실패했습니다."));
-                    return;
-                }
-            }
-
             setMessage(
                 getErrorMessage(
                     error,
@@ -191,23 +150,6 @@ function PublicReviewDetailPage() {
             setBookmarkCount((prevCount) => prevCount + 1);
         } catch (error) {
             console.error(error);
-
-            if (isAlreadyBookmarkedError(error)) {
-                try {
-                    await unbookmarkReview(review.reviewId);
-
-                    setBookmarked(false);
-                    setBookmarkCount((prevCount) => Math.max(prevCount - 1, 0));
-                    setMessage("");
-                    return;
-                } catch (unbookmarkError) {
-                    console.error(unbookmarkError);
-                    setMessage(
-                        getErrorMessage(unbookmarkError, "북마크 취소에 실패했습니다.")
-                    );
-                    return;
-                }
-            }
 
             setMessage(
                 getErrorMessage(

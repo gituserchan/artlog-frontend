@@ -39,6 +39,8 @@ export interface PublicReviewResponse {
     imageUrls: string[];
     likeCount: number;
     bookmarkCount: number;
+    likedByMe: boolean;
+    bookmarkedByMe: boolean;
     createdAt: string;
     updatedAt: string;
 }
