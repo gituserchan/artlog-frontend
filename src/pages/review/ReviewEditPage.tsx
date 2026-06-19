@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { FormEvent } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { uploadImages } from "../../api/fileApi";
@@ -76,13 +76,14 @@ function ReviewEditPage() {
         fetchReview();
     }, [reviewId]);
 
-    const handleImageFileChange = (
-        event: React.ChangeEvent<HTMLInputElement>
-    ) => {
+    const handleImageFileChange = (event: ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(event.target.files || []);
+        const nextTotalImageCount = imageUrls.length + files.length;
 
-        if (files.length > 10) {
-            setMessage("이미지는 최대 10장까지 선택할 수 있습니다.");
+        if (nextTotalImageCount > 10) {
+            setMessage(
+                `이미지는 최대 10장까지 등록할 수 있습니다. 현재 ${imageUrls.length}장이 있고, ${10 - imageUrls.length}장까지 추가할 수 있습니다.`
+            );
             event.target.value = "";
             return;
         }
@@ -91,10 +92,22 @@ function ReviewEditPage() {
         setMessage("");
     };
 
-    const handleRemoveExistingImages = () => {
+    const handleRemoveExistingImage = (targetImageUrl: string) => {
+        setImageUrls((prevImageUrls) =>
+            prevImageUrls.filter((imageUrl) => imageUrl !== targetImageUrl)
+        );
+        setMessage("선택한 기존 이미지를 삭제하도록 설정했습니다.");
+    };
+
+    const handleRemoveAllExistingImages = () => {
         setImageUrls([]);
         setImageFiles([]);
         setMessage("기존 이미지를 모두 삭제하도록 설정했습니다.");
+    };
+
+    const handleClearNewImages = () => {
+        setImageFiles([]);
+        setMessage("새로 선택한 이미지를 초기화했습니다.");
     };
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -109,8 +122,10 @@ function ReviewEditPage() {
         setMessage("");
 
         try {
-            const nextImageUrls =
-                imageFiles.length > 0 ? await uploadImages(imageFiles) : imageUrls;
+            const uploadedImageUrls =
+                imageFiles.length > 0 ? await uploadImages(imageFiles) : [];
+
+            const nextImageUrls = [...imageUrls, ...uploadedImageUrls];
 
             const response = await updateReview(reviewId, {
                 title,
@@ -215,7 +230,7 @@ function ReviewEditPage() {
                     />
                 </div>
 
-                {imageUrls.length > 0 && imageFiles.length === 0 && (
+                {imageUrls.length > 0 && (
                     <div className="image-preview">
                         <p>현재 이미지 {imageUrls.length}장</p>
 
@@ -227,18 +242,32 @@ function ReviewEditPage() {
                             }}
                         >
                             {imageUrls.map((imageUrl) => (
-                                <img
-                                    key={imageUrl}
-                                    src={getImageSrc(imageUrl)}
-                                    alt="감상 이미지"
-                                    style={{
-                                        width: "100%",
-                                        height: "120px",
-                                        objectFit: "cover",
-                                        borderRadius: "12px",
-                                        border: "1px solid #e0d7ca",
-                                    }}
-                                />
+                                <div key={imageUrl}>
+                                    <img
+                                        src={getImageSrc(imageUrl)}
+                                        alt="감상 이미지"
+                                        style={{
+                                            width: "100%",
+                                            height: "120px",
+                                            objectFit: "cover",
+                                            borderRadius: "12px",
+                                            border: "1px solid #e0d7ca",
+                                        }}
+                                    />
+
+                                    <button
+                                        type="button"
+                                        className="subtle-button"
+                                        style={{
+                                            width: "100%",
+                                            marginTop: "8px",
+                                            padding: "8px",
+                                        }}
+                                        onClick={() => handleRemoveExistingImage(imageUrl)}
+                                    >
+                                        이 이미지 삭제
+                                    </button>
+                                </div>
                             ))}
                         </div>
 
@@ -246,7 +275,7 @@ function ReviewEditPage() {
                             type="button"
                             className="subtle-button"
                             style={{ marginTop: "12px" }}
-                            onClick={handleRemoveExistingImages}
+                            onClick={handleRemoveAllExistingImages}
                         >
                             기존 이미지 모두 삭제
                         </button>
@@ -254,7 +283,7 @@ function ReviewEditPage() {
                 )}
 
                 <div>
-                    <label>새 감상 이미지</label>
+                    <label>새 감상 이미지 추가</label>
                     <input
                         type="file"
                         accept="image/*"
@@ -262,13 +291,14 @@ function ReviewEditPage() {
                         onChange={handleImageFileChange}
                     />
                     <p className="page-description">
-                        새 이미지를 선택하면 기존 이미지 목록이 새 이미지로 교체됩니다.
+                        새 이미지를 선택하면 기존 이미지에 추가됩니다. 이미지는 최대
+                        10장까지 등록할 수 있습니다.
                     </p>
                 </div>
 
                 {imageFiles.length > 0 && (
                     <div className="image-preview">
-                        <p>새로 선택한 이미지 {imageFiles.length}장</p>
+                        <p>새로 추가할 이미지 {imageFiles.length}장</p>
 
                         <div
                             style={{
@@ -292,6 +322,15 @@ function ReviewEditPage() {
                                 />
                             ))}
                         </div>
+
+                        <button
+                            type="button"
+                            className="subtle-button"
+                            style={{ marginTop: "12px" }}
+                            onClick={handleClearNewImages}
+                        >
+                            새로 선택한 이미지 초기화
+                        </button>
                     </div>
                 )}
 
