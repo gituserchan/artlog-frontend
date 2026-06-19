@@ -13,7 +13,7 @@ export interface PublicReviewSimpleResponse {
     rating: number;
     emotionTag: string | null;
     keywords: string | null;
-    imageUrl: string | null;
+    imageUrls: string[];
     likeCount: number;
     bookmarkCount: number;
     createdAt: string;
@@ -36,7 +36,7 @@ export interface PublicReviewResponse {
     emotionTag: string | null;
     keywords: string | null;
     wantToRevisit: boolean | null;
-    imageUrl: string | null;
+    imageUrls: string[];
     likeCount: number;
     bookmarkCount: number;
     createdAt: string;

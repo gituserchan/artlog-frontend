@@ -14,6 +14,6 @@ export interface ReviewBookmarkResponse {
     rating: number;
     emotionTag: string | null;
     keywords: string | null;
-    imageUrl: string | null;
+    imageUrls: string[];
     bookmarkedAt: string;
 }

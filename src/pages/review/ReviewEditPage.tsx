@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import { uploadImages } from "../../api/fileApi";
 import { getReview, updateReview } from "../../api/reviewApi";
 import type { ReviewVisibility } from "../../types/review";
 
@@ -17,11 +18,21 @@ function ReviewEditPage() {
     const [emotionTag, setEmotionTag] = useState("");
     const [keywords, setKeywords] = useState("");
     const [wantToRevisit, setWantToRevisit] = useState(false);
-    const [imageUrl, setImageUrl] = useState<string | null>(null);
+    const [imageUrls, setImageUrls] = useState<string[]>([]);
+    const [imageFiles, setImageFiles] = useState<File[]>([]);
     const [visibility, setVisibility] = useState<ReviewVisibility>("PRIVATE");
 
     const [loading, setLoading] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState("");
+
+    const getImageSrc = (imageUrl: string) => {
+        if (imageUrl.startsWith("http")) {
+            return imageUrl;
+        }
+
+        return `${import.meta.env.VITE_API_BASE_URL}${imageUrl}`;
+    };
 
     const fetchReview = async () => {
         if (!reviewId || Number.isNaN(reviewId)) {
@@ -42,7 +53,7 @@ function ReviewEditPage() {
             setEmotionTag(review.emotionTag || "");
             setKeywords(review.keywords || "");
             setWantToRevisit(!!review.wantToRevisit);
-            setImageUrl(review.imageUrl);
+            setImageUrls(review.imageUrls || []);
             setVisibility(review.visibility);
         } catch (error) {
             console.error(error);
@@ -65,6 +76,27 @@ function ReviewEditPage() {
         fetchReview();
     }, [reviewId]);
 
+    const handleImageFileChange = (
+        event: React.ChangeEvent<HTMLInputElement>
+    ) => {
+        const files = Array.from(event.target.files || []);
+
+        if (files.length > 10) {
+            setMessage("이미지는 최대 10장까지 선택할 수 있습니다.");
+            event.target.value = "";
+            return;
+        }
+
+        setImageFiles(files);
+        setMessage("");
+    };
+
+    const handleRemoveExistingImages = () => {
+        setImageUrls([]);
+        setImageFiles([]);
+        setMessage("기존 이미지를 모두 삭제하도록 설정했습니다.");
+    };
+
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
@@ -73,9 +105,13 @@ function ReviewEditPage() {
             return;
         }
 
+        setSubmitting(true);
         setMessage("");
 
         try {
+            const nextImageUrls =
+                imageFiles.length > 0 ? await uploadImages(imageFiles) : imageUrls;
+
             const response = await updateReview(reviewId, {
                 title,
                 content,
@@ -83,7 +119,7 @@ function ReviewEditPage() {
                 emotionTag,
                 keywords,
                 wantToRevisit,
-                imageUrl,
+                imageUrls: nextImageUrls,
                 visibility,
             });
 
@@ -101,6 +137,8 @@ function ReviewEditPage() {
             }
 
             setMessage("감상 기록 수정에 실패했습니다.");
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -115,7 +153,8 @@ function ReviewEditPage() {
                     <p className="eyebrow">Edit review</p>
                     <h1>감상 기록 수정</h1>
                     <p className="page-description">
-                        작성한 감상 제목, 내용, 평점, 공개 여부를 수정할 수 있습니다.
+                        작성한 감상 제목, 내용, 평점, 이미지, 공개 여부를 수정할 수
+                        있습니다.
                     </p>
                 </div>
             </div>
@@ -176,6 +215,86 @@ function ReviewEditPage() {
                     />
                 </div>
 
+                {imageUrls.length > 0 && imageFiles.length === 0 && (
+                    <div className="image-preview">
+                        <p>현재 이미지 {imageUrls.length}장</p>
+
+                        <div
+                            style={{
+                                display: "grid",
+                                gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+                                gap: "10px",
+                            }}
+                        >
+                            {imageUrls.map((imageUrl) => (
+                                <img
+                                    key={imageUrl}
+                                    src={getImageSrc(imageUrl)}
+                                    alt="감상 이미지"
+                                    style={{
+                                        width: "100%",
+                                        height: "120px",
+                                        objectFit: "cover",
+                                        borderRadius: "12px",
+                                        border: "1px solid #e0d7ca",
+                                    }}
+                                />
+                            ))}
+                        </div>
+
+                        <button
+                            type="button"
+                            className="subtle-button"
+                            style={{ marginTop: "12px" }}
+                            onClick={handleRemoveExistingImages}
+                        >
+                            기존 이미지 모두 삭제
+                        </button>
+                    </div>
+                )}
+
+                <div>
+                    <label>새 감상 이미지</label>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageFileChange}
+                    />
+                    <p className="page-description">
+                        새 이미지를 선택하면 기존 이미지 목록이 새 이미지로 교체됩니다.
+                    </p>
+                </div>
+
+                {imageFiles.length > 0 && (
+                    <div className="image-preview">
+                        <p>새로 선택한 이미지 {imageFiles.length}장</p>
+
+                        <div
+                            style={{
+                                display: "grid",
+                                gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+                                gap: "10px",
+                            }}
+                        >
+                            {imageFiles.map((file) => (
+                                <img
+                                    key={`${file.name}-${file.lastModified}`}
+                                    src={URL.createObjectURL(file)}
+                                    alt={file.name}
+                                    style={{
+                                        width: "100%",
+                                        height: "120px",
+                                        objectFit: "cover",
+                                        borderRadius: "12px",
+                                        border: "1px solid #e0d7ca",
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 <div>
                     <label>재방문 의향</label>
                     <select
@@ -201,10 +320,13 @@ function ReviewEditPage() {
                 </div>
 
                 <div className="form-actions">
-                    <button type="submit">수정하기</button>
+                    <button type="submit" disabled={submitting}>
+                        {submitting ? "수정 중..." : "수정하기"}
+                    </button>
                     <button
                         type="button"
                         className="subtle-button"
+                        disabled={submitting}
                         onClick={() => navigate(`/reviews/${reviewId}`)}
                     >
                         취소

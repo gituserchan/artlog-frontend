@@ -14,6 +14,18 @@ function ReviewDetailPage() {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
 
+    const getImageSrc = (imageUrl: string) => {
+        if (imageUrl.startsWith("http")) {
+            return imageUrl;
+        }
+
+        return `${import.meta.env.VITE_API_BASE_URL}${imageUrl}`;
+    };
+
+    const formatDateTime = (dateTime: string) => {
+        return dateTime.replace("T", " ").slice(0, 16);
+    };
+
     const fetchReview = async () => {
         if (!reviewId || Number.isNaN(reviewId)) {
             setMessage("올바르지 않은 감상 기록입니다.");
@@ -115,6 +127,35 @@ function ReviewDetailPage() {
                 </div>
             </div>
 
+            {review.imageUrls.length > 0 && (
+                <div className="image-preview" style={{ marginBottom: "24px" }}>
+                    <p>감상 이미지 {review.imageUrls.length}장</p>
+
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+                            gap: "14px",
+                        }}
+                    >
+                        {review.imageUrls.map((imageUrl) => (
+                            <img
+                                key={imageUrl}
+                                src={getImageSrc(imageUrl)}
+                                alt="감상 이미지"
+                                style={{
+                                    width: "100%",
+                                    height: "180px",
+                                    objectFit: "cover",
+                                    borderRadius: "14px",
+                                    border: "1px solid #e0d7ca",
+                                }}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
+
             <div className="detail-card">
                 <dl className="detail-list">
                     <div>
@@ -149,12 +190,12 @@ function ReviewDetailPage() {
 
                     <div>
                         <dt>작성일</dt>
-                        <dd>{review.createdAt}</dd>
+                        <dd>{formatDateTime(review.createdAt)}</dd>
                     </div>
 
                     <div>
                         <dt>수정일</dt>
-                        <dd>{review.updatedAt}</dd>
+                        <dd>{formatDateTime(review.updatedAt)}</dd>
                     </div>
                 </dl>
 
@@ -177,7 +218,7 @@ function ReviewDetailPage() {
                     }
                     className="primary-link"
                 >
-                    원본 기록으로
+                    {review.reviewType === "ARTWORK" ? "작품 기록 보기" : "전시 기록 보기"}
                 </Link>
             </div>
         </section>

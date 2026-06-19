@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import { uploadImages } from "../../api/fileApi";
 import {
     createArtworkReview,
     createExhibitionReview,
@@ -24,7 +25,24 @@ function ReviewCreatePage() {
     const [keywords, setKeywords] = useState("");
     const [wantToRevisit, setWantToRevisit] = useState(false);
     const [visibility, setVisibility] = useState<ReviewVisibility>("PRIVATE");
+    const [imageFiles, setImageFiles] = useState<File[]>([]);
+    const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState("");
+
+    const handleImageFileChange = (
+        event: React.ChangeEvent<HTMLInputElement>
+    ) => {
+        const files = Array.from(event.target.files || []);
+
+        if (files.length > 10) {
+            setMessage("이미지는 최대 10장까지 선택할 수 있습니다.");
+            event.target.value = "";
+            return;
+        }
+
+        setImageFiles(files);
+        setMessage("");
+    };
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -34,9 +52,12 @@ function ReviewCreatePage() {
             return;
         }
 
+        setSubmitting(true);
         setMessage("");
 
         try {
+            const imageUrls = imageFiles.length > 0 ? await uploadImages(imageFiles) : [];
+
             const request = {
                 title,
                 content,
@@ -44,7 +65,7 @@ function ReviewCreatePage() {
                 emotionTag,
                 keywords,
                 wantToRevisit,
-                imageUrl: null,
+                imageUrls,
                 visibility,
             };
 
@@ -66,6 +87,8 @@ function ReviewCreatePage() {
             }
 
             setMessage("감상 기록 등록에 실패했습니다.");
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -136,6 +159,48 @@ function ReviewCreatePage() {
                 </div>
 
                 <div>
+                    <label>감상 이미지</label>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageFileChange}
+                    />
+                    <p className="page-description">
+                        이미지는 최대 10장까지 선택할 수 있습니다.
+                    </p>
+                </div>
+
+                {imageFiles.length > 0 && (
+                    <div className="image-preview">
+                        <p>선택한 이미지 {imageFiles.length}장</p>
+
+                        <div
+                            style={{
+                                display: "grid",
+                                gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+                                gap: "10px",
+                            }}
+                        >
+                            {imageFiles.map((file) => (
+                                <img
+                                    key={`${file.name}-${file.lastModified}`}
+                                    src={URL.createObjectURL(file)}
+                                    alt={file.name}
+                                    style={{
+                                        width: "100%",
+                                        height: "120px",
+                                        objectFit: "cover",
+                                        borderRadius: "12px",
+                                        border: "1px solid #e0d7ca",
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                <div>
                     <label>재방문 의향</label>
                     <select
                         value={wantToRevisit ? "true" : "false"}
@@ -162,10 +227,13 @@ function ReviewCreatePage() {
                 {message && <p className="error-text">{message}</p>}
 
                 <div className="form-actions">
-                    <button type="submit">등록하기</button>
+                    <button type="submit" disabled={submitting}>
+                        {submitting ? "등록 중..." : "등록하기"}
+                    </button>
                     <button
                         type="button"
                         className="subtle-button"
+                        disabled={submitting}
                         onClick={() =>
                             isArtworkReview
                                 ? navigate(`/exhibitions/${exhibitionId}/artworks/${artworkId}`)

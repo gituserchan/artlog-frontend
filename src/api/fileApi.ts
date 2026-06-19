@@ -23,3 +23,14 @@ export const uploadImage = async (file: File) => {
 
     return response.data.data.imageUrl;
 };
+
+export const uploadImages = async (files: File[]) => {
+    const imageUrls: string[] = [];
+
+    for (const file of files) {
+        const imageUrl = await uploadImage(file);
+        imageUrls.push(imageUrl);
+    }
+
+    return imageUrls;
+};
