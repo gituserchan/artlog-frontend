@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import ConfirmModal from "../../components/common/ConfirmModal";
+import Toast from "../../components/common/Toast";
 import { deleteReview, getReview } from "../../api/reviewApi";
 import type { ReviewResponse } from "../../types/review";
 
@@ -12,7 +14,13 @@ function ReviewDetailPage() {
 
     const [review, setReview] = useState<ReviewResponse | null>(null);
     const [loading, setLoading] = useState(false);
+    const [deleteLoading, setDeleteLoading] = useState(false);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [message, setMessage] = useState("");
+    const [toastMessage, setToastMessage] = useState("");
+    const [toastType, setToastType] = useState<"success" | "error" | "info">(
+        "info"
+    );
 
     const getImageSrc = (imageUrl: string) => {
         if (imageUrl.startsWith("http")) {
@@ -24,6 +32,22 @@ function ReviewDetailPage() {
 
     const formatDateTime = (dateTime: string) => {
         return dateTime.replace("T", " ").slice(0, 16);
+    };
+
+    const getErrorMessage = (error: unknown, fallbackMessage: string) => {
+        if (axios.isAxiosError(error)) {
+            return error.response?.data?.message || fallbackMessage;
+        }
+
+        return fallbackMessage;
+    };
+
+    const showToast = (
+        nextMessage: string,
+        nextType: "success" | "error" | "info"
+    ) => {
+        setToastMessage(nextMessage);
+        setToastType(nextType);
     };
 
     const fetchReview = async () => {
@@ -40,16 +64,7 @@ function ReviewDetailPage() {
             setReview(response.data);
         } catch (error) {
             console.error(error);
-
-            if (axios.isAxiosError(error)) {
-                const errorMessage =
-                    error.response?.data?.message || "감상 기록을 불러오지 못했습니다.";
-
-                setMessage(errorMessage);
-                return;
-            }
-
-            setMessage("감상 기록을 불러오지 못했습니다.");
+            setMessage(getErrorMessage(error, "감상 기록을 불러오지 못했습니다."));
         } finally {
             setLoading(false);
         }
@@ -59,34 +74,30 @@ function ReviewDetailPage() {
         fetchReview();
     }, [reviewId]);
 
-    const handleDelete = async () => {
+    const handleDeleteConfirm = async () => {
         if (!review) {
             return;
         }
 
-        const confirmed = window.confirm("이 감상 기록을 삭제하시겠습니까?");
-
-        if (!confirmed) {
-            return;
-        }
+        setDeleteLoading(true);
+        setMessage("");
 
         try {
             await deleteReview(review.reviewId);
 
-            alert("감상 기록이 삭제되었습니다.");
-            navigate("/reviews");
+            setDeleteModalOpen(false);
+            showToast("감상 기록이 삭제되었습니다.", "success");
+
+            setTimeout(() => {
+                navigate("/reviews");
+            }, 600);
         } catch (error) {
             console.error(error);
 
-            if (axios.isAxiosError(error)) {
-                const errorMessage =
-                    error.response?.data?.message || "감상 기록 삭제에 실패했습니다.";
-
-                setMessage(errorMessage);
-                return;
-            }
-
-            setMessage("감상 기록 삭제에 실패했습니다.");
+            setDeleteModalOpen(false);
+            showToast(getErrorMessage(error, "감상 기록 삭제에 실패했습니다."), "error");
+        } finally {
+            setDeleteLoading(false);
         }
     };
 
@@ -104,10 +115,30 @@ function ReviewDetailPage() {
 
     return (
         <section>
+            <Toast
+                message={toastMessage}
+                type={toastType}
+                onClose={() => setToastMessage("")}
+            />
+
+            <ConfirmModal
+                open={deleteModalOpen}
+                title="감상 기록을 삭제할까요?"
+                description="삭제한 감상 기록은 다시 복구할 수 없습니다."
+                confirmText="삭제하기"
+                cancelText="취소"
+                danger
+                loading={deleteLoading}
+                onConfirm={handleDeleteConfirm}
+                onCancel={() => setDeleteModalOpen(false)}
+            />
+
             <div className="detail-header">
                 <div>
                     <p className="eyebrow">
-                        {review.reviewType === "EXHIBITION" ? "Exhibition review" : "Artwork review"}
+                        {review.reviewType === "EXHIBITION"
+                            ? "Exhibition review"
+                            : "Artwork review"}
                     </p>
                     <h1>{review.title}</h1>
                     <p className="page-description">
@@ -118,10 +149,17 @@ function ReviewDetailPage() {
                 </div>
 
                 <div className="detail-actions">
-                    <Link to={`/reviews/${review.reviewId}/edit`} className="secondary-link">
+                    <Link
+                        to={`/reviews/${review.reviewId}/edit`}
+                        className="secondary-link"
+                    >
                         수정
                     </Link>
-                    <button type="button" className="danger-button" onClick={handleDelete}>
+                    <button
+                        type="button"
+                        className="danger-button"
+                        onClick={() => setDeleteModalOpen(true)}
+                    >
                         삭제
                     </button>
                 </div>
@@ -160,7 +198,9 @@ function ReviewDetailPage() {
                 <dl className="detail-list">
                     <div>
                         <dt>구분</dt>
-                        <dd>{review.reviewType === "EXHIBITION" ? "전시 감상" : "작품 감상"}</dd>
+                        <dd>
+                            {review.reviewType === "EXHIBITION" ? "전시 감상" : "작품 감상"}
+                        </dd>
                     </div>
 
                     <div>
