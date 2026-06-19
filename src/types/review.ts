@@ -56,3 +56,16 @@ export interface ReviewUpdateRequest {
     imageUrls: string[];
     visibility: ReviewVisibility;
 }
+
+export interface ReviewSearchParams {
+    keyword?: string;
+    reviewType?: ReviewType;
+    visibility?: ReviewVisibility;
+    minRating?: number;
+    maxRating?: number;
+    emotionTag?: string;
+    keywords?: string;
+    wantToRevisit?: boolean;
+    createdFrom?: string;
+    createdTo?: string;
+}

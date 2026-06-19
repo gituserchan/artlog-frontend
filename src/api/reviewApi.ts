@@ -3,6 +3,7 @@ import type { ApiResponse, PageResponse } from "../types/api";
 import type {
     ReviewCreateRequest,
     ReviewResponse,
+    ReviewSearchParams,
     ReviewSimpleResponse,
     ReviewUpdateRequest,
 } from "../types/review";
@@ -12,6 +13,24 @@ export const getReviews = async (page = 0, size = 10) => {
         ApiResponse<PageResponse<ReviewSimpleResponse>>
     >("/api/reviews", {
         params: {
+            page,
+            size,
+        },
+    });
+
+    return response.data;
+};
+
+export const searchReviews = async (
+    searchParams: ReviewSearchParams,
+    page = 0,
+    size = 10
+) => {
+    const response = await axiosInstance.get<
+        ApiResponse<PageResponse<ReviewSimpleResponse>>
+    >("/api/reviews/search", {
+        params: {
+            ...searchParams,
             page,
             size,
         },
