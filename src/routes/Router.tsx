@@ -17,6 +17,7 @@ import ReviewCreatePage from "../pages/review/ReviewCreatePage";
 import ReviewDetailPage from "../pages/review/ReviewDetailPage";
 import ReviewEditPage from "../pages/review/ReviewEditPage";
 import ReviewListPage from "../pages/review/ReviewListPage";
+import StatisticsPage from "../pages/statistics/StatisticsPage";
 import BookmarkListPage from "../pages/user/BookmarkListPage";
 import MyPage from "../pages/user/MyPage";
 
@@ -104,6 +105,10 @@ const router = createBrowserRouter([
             {
                 path: "mypage/bookmarks",
                 element: <BookmarkListPage />,
+            },
+            {
+                path: "statistics",
+                element: <StatisticsPage />,
             },
         ],
     },
