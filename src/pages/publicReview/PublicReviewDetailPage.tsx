@@ -55,32 +55,6 @@ function PublicReviewDetailPage() {
             : "전시 기록 보기";
     };
 
-    const isAlreadyLikedError = (error: unknown) => {
-        if (!axios.isAxiosError(error)) {
-            return false;
-        }
-
-        const errorMessage = error.response?.data?.message || "";
-
-        return (
-            errorMessage.includes("이미") &&
-            (errorMessage.includes("좋아요") || errorMessage.includes("like"))
-        );
-    };
-
-    const isAlreadyBookmarkedError = (error: unknown) => {
-        if (!axios.isAxiosError(error)) {
-            return false;
-        }
-
-        const errorMessage = error.response?.data?.message || "";
-
-        return (
-            errorMessage.includes("이미") &&
-            (errorMessage.includes("북마크") || errorMessage.includes("bookmark"))
-        );
-    };
-
     const getErrorMessage = (error: unknown, fallbackMessage: string) => {
         if (axios.isAxiosError(error)) {
             return error.response?.data?.message || fallbackMessage;
@@ -104,16 +78,8 @@ function PublicReviewDetailPage() {
             setReview(response.data);
             setLikeCount(response.data.likeCount);
             setBookmarkCount(response.data.bookmarkCount);
-
-            /**
-             * 현재 백엔드 공개 감상 응답에는
-             * 내가 좋아요/북마크를 눌렀는지 여부가 없습니다.
-             *
-             * 그래서 최초 진입 시에는 false로 두고,
-             * 실제 버튼 클릭 시 서버 응답을 기준으로 상태를 보정합니다.
-             */
-            setLiked(false);
-            setBookmarked(false);
+            setLiked(response.data.likedByMe);
+            setBookmarked(response.data.bookmarkedByMe);
         } catch (error) {
             console.error(error);
             setMessage(getErrorMessage(error, "공개 감상을 불러오지 못했습니다."));
@@ -150,27 +116,6 @@ function PublicReviewDetailPage() {
         } catch (error) {
             console.error(error);
 
-            /**
-             * 백엔드는 이미 좋아요를 누른 감상에 다시 POST를 보내면 에러를 반환합니다.
-             * 하지만 프론트는 최초 진입 시 좋아요 여부를 알 수 없으므로,
-             * 이 에러가 오면 실제 상태가 "이미 좋아요한 상태"였다고 보고
-             * 사용자의 클릭을 "좋아요 취소" 의도로 처리합니다.
-             */
-            if (isAlreadyLikedError(error)) {
-                try {
-                    await unlikeReview(review.reviewId);
-
-                    setLiked(false);
-                    setLikeCount((prevCount) => Math.max(prevCount - 1, 0));
-                    setMessage("");
-                    return;
-                } catch (unlikeError) {
-                    console.error(unlikeError);
-                    setMessage(getErrorMessage(unlikeError, "좋아요 취소에 실패했습니다."));
-                    return;
-                }
-            }
-
             setMessage(
                 getErrorMessage(
                     error,
@@ -205,28 +150,6 @@ function PublicReviewDetailPage() {
             setBookmarkCount((prevCount) => prevCount + 1);
         } catch (error) {
             console.error(error);
-
-            /**
-             * 좋아요와 동일하게,
-             * 이미 북마크한 감상에 다시 POST를 보냈다는 서버 에러가 오면
-             * 사용자의 클릭을 "북마크 취소" 의도로 처리합니다.
-             */
-            if (isAlreadyBookmarkedError(error)) {
-                try {
-                    await unbookmarkReview(review.reviewId);
-
-                    setBookmarked(false);
-                    setBookmarkCount((prevCount) => Math.max(prevCount - 1, 0));
-                    setMessage("");
-                    return;
-                } catch (unbookmarkError) {
-                    console.error(unbookmarkError);
-                    setMessage(
-                        getErrorMessage(unbookmarkError, "북마크 취소에 실패했습니다.")
-                    );
-                    return;
-                }
-            }
 
             setMessage(
                 getErrorMessage(
@@ -285,98 +208,122 @@ function PublicReviewDetailPage() {
 
             {message && <p className="error-text">{message}</p>}
 
-            <div className="detail-layout">
-                <div className="detail-poster">
-                    {review.imageUrl ? (
-                        <img src={getImageSrc(review.imageUrl)} alt={review.title} />
-                    ) : (
-                        <span>No image</span>
-                    )}
-                </div>
+            {review.imageUrls.length > 0 && (
+                <div className="image-preview" style={{ marginBottom: "24px" }}>
+                    <p>감상 이미지 {review.imageUrls.length}장</p>
 
-                <div className="detail-card">
-                    <dl className="detail-list">
-                        <div>
-                            <dt>작성자</dt>
-                            <dd>{review.nickname}</dd>
-                        </div>
-
-                        <div>
-                            <dt>구분</dt>
-                            <dd>
-                                {review.reviewType === "EXHIBITION" ? "전시 감상" : "작품 감상"}
-                            </dd>
-                        </div>
-
-                        <div>
-                            <dt>전시명</dt>
-                            <dd>{review.exhibitionTitle}</dd>
-                        </div>
-
-                        <div>
-                            <dt>미술관 / 전시장</dt>
-                            <dd>{review.museumName}</dd>
-                        </div>
-
-                        {review.reviewType === "ARTWORK" && (
-                            <>
-                                <div>
-                                    <dt>작품명</dt>
-                                    <dd>{review.artworkTitle || "-"}</dd>
-                                </div>
-
-                                <div>
-                                    <dt>작가</dt>
-                                    <dd>{review.artistName || "작가 미상"}</dd>
-                                </div>
-                            </>
-                        )}
-
-                        <div>
-                            <dt>평점</dt>
-                            <dd>{review.rating}점</dd>
-                        </div>
-
-                        <div>
-                            <dt>감정 태그</dt>
-                            <dd>{review.emotionTag || "-"}</dd>
-                        </div>
-
-                        <div>
-                            <dt>키워드</dt>
-                            <dd>{review.keywords || "-"}</dd>
-                        </div>
-
-                        <div>
-                            <dt>재방문 의향</dt>
-                            <dd>{review.wantToRevisit ? "있음" : "없음"}</dd>
-                        </div>
-
-                        <div>
-                            <dt>좋아요</dt>
-                            <dd>{likeCount}</dd>
-                        </div>
-
-                        <div>
-                            <dt>북마크</dt>
-                            <dd>{bookmarkCount}</dd>
-                        </div>
-
-                        <div>
-                            <dt>작성일</dt>
-                            <dd>{formatCreatedAt(review.createdAt)}</dd>
-                        </div>
-
-                        <div>
-                            <dt>수정일</dt>
-                            <dd>{formatCreatedAt(review.updatedAt)}</dd>
-                        </div>
-                    </dl>
-
-                    <div className="memo-box">
-                        <h2>감상 내용</h2>
-                        <p>{review.content}</p>
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+                            gap: "14px",
+                        }}
+                    >
+                        {review.imageUrls.map((imageUrl) => (
+                            <img
+                                key={imageUrl}
+                                src={getImageSrc(imageUrl)}
+                                alt="감상 이미지"
+                                style={{
+                                    width: "100%",
+                                    height: "180px",
+                                    objectFit: "cover",
+                                    borderRadius: "14px",
+                                    border: "1px solid #e0d7ca",
+                                }}
+                            />
+                        ))}
                     </div>
+                </div>
+            )}
+
+            <div className="detail-card">
+                <dl className="detail-list">
+                    <div>
+                        <dt>작성자</dt>
+                        <dd>{review.nickname}</dd>
+                    </div>
+
+                    <div>
+                        <dt>구분</dt>
+                        <dd>
+                            {review.reviewType === "EXHIBITION" ? "전시 감상" : "작품 감상"}
+                        </dd>
+                    </div>
+
+                    <div>
+                        <dt>전시명</dt>
+                        <dd>{review.exhibitionTitle}</dd>
+                    </div>
+
+                    <div>
+                        <dt>미술관 / 전시장</dt>
+                        <dd>{review.museumName}</dd>
+                    </div>
+
+                    {review.reviewType === "ARTWORK" && (
+                        <>
+                            <div>
+                                <dt>작품명</dt>
+                                <dd>{review.artworkTitle || "-"}</dd>
+                            </div>
+
+                            <div>
+                                <dt>작가</dt>
+                                <dd>{review.artistName || "작가 미상"}</dd>
+                            </div>
+                        </>
+                    )}
+
+                    <div>
+                        <dt>평점</dt>
+                        <dd>{review.rating}점</dd>
+                    </div>
+
+                    <div>
+                        <dt>감정 태그</dt>
+                        <dd>{review.emotionTag || "-"}</dd>
+                    </div>
+
+                    <div>
+                        <dt>키워드</dt>
+                        <dd>{review.keywords || "-"}</dd>
+                    </div>
+
+                    <div>
+                        <dt>재방문 의향</dt>
+                        <dd>{review.wantToRevisit ? "있음" : "없음"}</dd>
+                    </div>
+
+                    <div>
+                        <dt>이미지</dt>
+                        <dd>{review.imageUrls.length}장</dd>
+                    </div>
+
+                    <div>
+                        <dt>좋아요</dt>
+                        <dd>{likeCount}</dd>
+                    </div>
+
+                    <div>
+                        <dt>북마크</dt>
+                        <dd>{bookmarkCount}</dd>
+                    </div>
+
+                    <div>
+                        <dt>작성일</dt>
+                        <dd>{formatCreatedAt(review.createdAt)}</dd>
+                    </div>
+
+                    <div>
+                        <dt>수정일</dt>
+                        <dd>{formatCreatedAt(review.updatedAt)}</dd>
+                    </div>
+                </dl>
+
+                <div className="memo-box">
+                    <h2>감상 내용</h2>
+                    <p>{review.content}</p>
                 </div>
             </div>
 
